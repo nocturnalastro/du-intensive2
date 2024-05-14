@@ -7,7 +7,9 @@ metricsEndpoints:
 global:
   measurements:
     - name: podLatency
-
+    - name: API99thLatency
+    - name: APIRequestRate
+    - name: APIInflightRequests
 jobs:
   - name: api-intensive
     jobIterations: 10

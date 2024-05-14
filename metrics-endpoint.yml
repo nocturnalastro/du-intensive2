@@ -1,0 +1,2 @@
+- endpoint: local
+  profile: metrics-report.yml
