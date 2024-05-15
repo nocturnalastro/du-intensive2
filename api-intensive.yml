@@ -6,13 +6,10 @@ metricsEndpoints:
       type: local
       metricsDirectory: collected-metrics
 
-global:
-  measurements:
-    - name: podLatency
-    - name: API99thLatency
-    - name: APIRequestRate
-    - name: APIInflightRequests
-    - name: cpu-kube-apiserver
+# global:
+#   measurements:
+#     - name: podLatency
+
 jobs:
   - name: api-intensive
     jobIterations: 2
