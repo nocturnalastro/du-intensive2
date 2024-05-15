@@ -3,7 +3,8 @@ metricsEndpoints:
   - indexer:
       type: local
       metricsDirectory: collected-metrics
-
+metrics:
+  - metrics.yml
 global:
   measurements:
     - name: podLatency
