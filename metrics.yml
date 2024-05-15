@@ -8,3 +8,11 @@
 
 - query: sum(apiserver_current_inflight_requests{}) by (request_kind) > 0
   metricName: APIInflightRequests
+
+- query: avg_over_time(topk(3, sum(irate(container_cpu_usage_seconds_total{name!="", namespace="openshift-kube-apiserver"}[2m])) by (pod))[{{.elapsed}}:])
+  metricName: cpu-kube-apiserver
+  instant: true
+
+- query: avg_over_time(topk(3, sum(container_memory_rss{name!="", namespace="openshift-kube-apiserver"}) by (pod))[{{.elapsed}}:])
+  metricName: memory-kube-apiserver
+  instant: true
