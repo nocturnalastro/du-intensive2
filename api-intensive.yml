@@ -12,6 +12,7 @@ global:
     - name: API99thLatency
     - name: APIRequestRate
     - name: APIInflightRequests
+    - name: cpu-kube-apiserver
 jobs:
   - name: api-intensive
     jobIterations: 2
