@@ -26,7 +26,7 @@ spec:
         #     memory: 1024M
         env:
         - name: stress_cpu
-          value: '10'
+          value: '15'
         volumeMounts:
           - name: configmap
             mountPath: /var/configmap
