@@ -12,7 +12,7 @@ metricsEndpoints:
 
 jobs:
   - name: api-intensive
-    jobIterations: 10
+    jobIterations: 1
     qps: 4
     burst: 4
     namespacedIterations: false
@@ -22,7 +22,7 @@ jobs:
     waitWhenFinished: true
     objects:
       - objectTemplate: templates/deployment.yaml
-        replicas: 1
+        replicas: 10
       - objectTemplate: templates/configmap.yaml
         replicas: 1
       - objectTemplate: templates/secret.yaml
