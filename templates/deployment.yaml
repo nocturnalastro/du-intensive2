@@ -18,7 +18,7 @@ spec:
         name: api-intensive-{{.Replica}}
     spec:
       containers:
-      - image: ghcr.io/abraham2512/fedora-stress-ng:master
+      - image: registry.dev-kpi-03.hv4.ptp.eng.rdu2.dc.redhat.com:5000/kni-qe/fedora-stress-ng:master
         name: api-intensive-{{.Replica}}
         resources:
           requests:
