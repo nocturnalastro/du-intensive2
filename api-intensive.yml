@@ -22,7 +22,7 @@ jobs:
     waitWhenFinished: false
     objects:
       - objectTemplate: templates/deployment.yaml
-        replicas: 10
+        replicas: 1
       - objectTemplate: templates/configmap.yaml
         replicas: 1
       - objectTemplate: templates/secret.yaml
