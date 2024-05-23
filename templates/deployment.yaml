@@ -18,12 +18,12 @@ spec:
         name: api-intensive-{{.Replica}}
     spec:
       containers:
-      - image: registry.k8s.io/pause:3.1
+      - image: ghcr.io/abraham2512/fedora-stress-ng:master
         name: api-intensive-{{.Replica}}
         resources:
           requests:
-            cpu: 10m
-            memory: 10M
+            cpu: 1000m
+            memory: 1024M
         volumeMounts:
           - name: configmap
             mountPath: /var/configmap
