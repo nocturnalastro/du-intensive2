@@ -23,6 +23,8 @@ jobs:
     objects:
       - objectTemplate: templates/deployment.yaml
         replicas: 1
+        inputVars:
+          stress_cpu: 1
       - objectTemplate: templates/configmap.yaml
         replicas: 1
       - objectTemplate: templates/secret.yaml
