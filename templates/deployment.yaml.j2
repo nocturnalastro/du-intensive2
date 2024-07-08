@@ -3,6 +3,12 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: du-workload-{{.Replica}}
+  annotations:
+    # Disable CPU balance with CRIO
+    irq-load-balancing.crio.io: "disable"
+    cpu-load-balancing.crio.io: "disable"
+    cpu-quota.crio.io: "disable"
+
   labels:
     group: load
     svc: du-workload-{{.Replica}}
