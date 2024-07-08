@@ -11,7 +11,7 @@ metricsEndpoints:
 #     - name: podLatency
 
 jobs:
-  - name: du-emulator
+  - name: du-workload
     jobIterations: 1
     qps: 4
     burst: 4
