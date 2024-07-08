@@ -18,7 +18,7 @@ spec:
         name: du-workload-{{.Replica}}
     spec:
       containers:
-      - image: {{registry}}:5000/kni-qe/fedora-stress-ng:master
+      - image: registry.dev-kpi-03.hv4.ptp.eng.rdu2.dc.redhat.com:5000:5000/kni-qe/fedora-stress-ng:master
         name: du-workload-{{.Replica}}
         # resources:
         #   requests:

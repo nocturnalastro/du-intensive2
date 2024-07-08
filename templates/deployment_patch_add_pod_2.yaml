@@ -4,9 +4,9 @@ spec:
   template:
     spec:
       containers:
-      - image: registry.k8s.io/pause:3.1
-        name: api-intensive-2
-        resources:
-          requests:
-            cpu: 10m
-            memory: 10M
+        - image: registry.k8s.io/pause:3.1
+          name: du-workload-2
+          resources:
+            requests:
+              cpu: 10m
+              memory: 10M

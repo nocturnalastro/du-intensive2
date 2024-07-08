@@ -11,11 +11,11 @@ metricsEndpoints:
 #     - name: podLatency
 
 jobs:
-  - name: api-intensive
-    jobIterations: 1
+  - name: du-emulator
+    jobIterations: 15
     qps: 4
     burst: 4
-    namespacedIterations: false
+    namespacedIterations: true
     namespace: test
     podWait: false
     cleanup: false
