@@ -20,13 +20,13 @@ spec:
       containers:
       - image: {{registry}}:5000/kni-qe/fedora-stress-ng:master
         name: du-workload-{{.Replica}}
-        # resources:
-        #   requests:
-        #     cpu: 1000m
-        #     memory: 1024M
+        resources:
+         requests:
+          cpu: 1000m
+          memory: 1024M
         env:
         - name: stress_cpu
-          value: '15'
+          value: '1'
         volumeMounts:
           - name: configmap
             mountPath: /var/configmap
