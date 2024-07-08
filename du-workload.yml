@@ -24,11 +24,11 @@ jobs:
       - objectTemplate: templates/deployment.yaml
         replicas: 15
       - objectTemplate: templates/configmap.yaml
-        replicas: 1
+        replicas: 15
       - objectTemplate: templates/secret.yaml
-        replicas: 1
+        replicas: 15
       - objectTemplate: templates/service.yaml
-        replicas: 1
+        replicas: 15
 
   # - name: api-intensive-patch
   #   jobType: patch
