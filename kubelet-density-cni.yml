@@ -12,6 +12,7 @@ jobs:
     namespace: workload
     waitWhenFinished: true
     podWait: false
+    cleanup: false
     preLoadImages: true
     preLoadPeriod: 2m
     objects:
