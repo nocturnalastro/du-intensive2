@@ -1,8 +1,8 @@
-Templates for a RAN DU workload that runs in a SUT with a Hub/Spoke combination
+## Kube-burner-ocp based template for a RAN DU workload that runs in a SUT with a Hub/Spoke combination
 
 
 
-Pre-requisites to deploy workload:
+### Pre-requisites to deploy workload:
 
 Mirror this container to registry in the hub (if spoke is disconnected)
 https://github.com/abraham2512/fedora-stress-ng/pkgs/container/fedora-stress-ng
