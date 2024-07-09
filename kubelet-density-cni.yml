@@ -5,17 +5,16 @@ global:
 
 jobs:
   - name: kubelet-density-cni
-    jobIterations: 100
+    jobIterations: 10
     qps: 25
     burst: 25
     namespacedIterations: false
-    namespace: kubelet-density-cni
+    namespace: workload
     waitWhenFinished: true
     podWait: false
     preLoadImages: true
     preLoadPeriod: 2m
     objects:
-
       - objectTemplate: templates/webserver-deployment.yml
         replicas: 1
 
