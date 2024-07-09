@@ -11,26 +11,34 @@ spec:
       nodeSelector:
         node-role.kubernetes.io/worker: ""
       containers:
-      - name: curlapp
-        image: quay.io/cloud-bulldozer/curl:latest
-        command: ["sleep", "inf"]
-        env:
-        - name: WEBSERVER_HOSTNAME
-          value: webserver-{{.Replica}}-{{.Iteration}}
-        - name: WEBSERVER_PORT
-          value: "8080"
-        imagePullPolicy: IfNotPresent
-        securityContext:
-          privileged: false
-        startupProbe:
-          exec:
-            command: 
-              - "/bin/sh"
-              - "-c"
-              - "curl ${WEBSERVER_HOSTNAME}:${WEBSERVER_PORT}"
-          periodSeconds: 1
-          timeoutSeconds: 1
-          failureThreshold: 600
+        - name: curlapp
+          image: quay.io/cloud-bulldozer/curl:latest
+          command: ["sleep", "inf"]
+          env:
+            - name: WEBSERVER_HOSTNAME
+              value: webserver-{{.Replica}}-{{.Iteration}}
+            - name: WEBSERVER_PORT
+              value: "8080"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: false
+          startupProbe:
+            exec:
+              command:
+                - "/bin/sh"
+                - "-c"
+                - "curl ${WEBSERVER_HOSTNAME}:${WEBSERVER_PORT}"
+            periodSeconds: 1
+            timeoutSeconds: 1
+            failureThreshold: 600
+          livenessProbe:
+            exec:
+              command:
+                - "/bin/sh"
+                - "-c"
+                - "curl ${WEBSERVER_HOSTNAME}:${WEBSERVER_PORT}"
+            periodSeconds: 1
+            timeoutSeconds: 1
       restartPolicy: Always
   replicas: 1
   selector:

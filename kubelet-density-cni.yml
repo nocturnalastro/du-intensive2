@@ -4,7 +4,7 @@ global:
     - name: podLatency
 
 jobs:
-  - name: kubelet-density-cni
+  - name: du-workload
     jobIterations: 10
     qps: 25
     burst: 25
