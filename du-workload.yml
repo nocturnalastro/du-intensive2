@@ -23,6 +23,8 @@ jobs:
     objects:
       - objectTemplate: templates/deployment.yaml
         replicas: 15
+        inputVars:
+          registry: { { .REGISTRY } }
       - objectTemplate: templates/configmap.yaml
         replicas: 15
       - objectTemplate: templates/secret.yaml
