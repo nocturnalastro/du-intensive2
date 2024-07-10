@@ -7,11 +7,11 @@ metadata:
     irq-load-balancing.crio.io: "disable"
     cpu-load-balancing.crio.io: "disable"
     cpu-quota.crio.io: "disable"
-
   labels:
     group: load
     svc: du-workload-{{.Replica}}
 spec:
+  runtimeClassName: performance-openshift-node-performance-profile
   replicas: 1
   selector:
     matchLabels:
@@ -24,11 +24,18 @@ spec:
     spec:
       containers:
         - image: "{{ .registry }}:5000/kni-qe/fedora-stress-ng:master"
+          imagePullPolicy: Always
           name: du-workload-{{.Replica}}
+          # Request and Limits must be identical for the Pod to be assigned to the QoS Guarantee
           resources:
             requests:
               cpu: 1000m
               memory: 1024M
+            limits:
+              cpu: 1000m
+              memory: 1024M
+          securityContext:
+            privileged: true
           env:
             - name: stress_cpu
               value: "1"
