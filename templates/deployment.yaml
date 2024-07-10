@@ -34,8 +34,8 @@ spec:
             limits:
               cpu: 1000m
               memory: 1024M
-          securityContext:
-            privileged: true
+          # securityContext:
+          #   privileged: true
           env:
             - name: stress_cpu
               value: "1"
