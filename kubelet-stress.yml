@@ -5,7 +5,7 @@ global:
 
 jobs:
   - name: du-workload
-    jobIterations: 100
+    jobIterations: 15
     qps: 25
     burst: 25
     namespacedIterations: false

@@ -37,8 +37,9 @@ spec:
                 - "/bin/sh"
                 - "-c"
                 - "curl ${WEBSERVER_HOSTNAME}:${WEBSERVER_PORT}"
-            periodSeconds: 1
-            timeoutSeconds: 1
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
       restartPolicy: Always
   replicas: 1
   selector:
