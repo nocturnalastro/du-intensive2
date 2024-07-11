@@ -26,8 +26,8 @@ jobs:
         inputVars:
           registry: {{ .REGISTRY }}
       - objectTemplate: templates/configmap.yaml
-        replicas: 15
+        replicas: 30
       - objectTemplate: templates/secret.yaml
-        replicas: 15
+        replicas: 60
       - objectTemplate: templates/service.yaml
         replicas: 15

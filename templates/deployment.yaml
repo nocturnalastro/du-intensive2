@@ -46,10 +46,18 @@ spec:
             - name: stress_vm-bytes
               value: "512M"
           volumeMounts:
-            - name: configmap
-              mountPath: /var/configmap
-            - name: secret
-              mountPath: /var/secret
+            - name: configmap-1
+              mountPath: /var/configmap1
+            - name: configmap-2
+              mountPath: /var/configmap2
+            - name: secret-1
+              mountPath: /var/secret1
+            - name: secret-2
+              mountPath: /var/secret2
+            - name: secret-3
+              mountPath: /var/secret3
+            - name: secret-4
+              mountPath: /var/secret4
       dnsPolicy: Default
       terminationGracePeriodSeconds: 1
       # Add not-ready/unreachable tolerations for 15 minutes so that node
@@ -64,9 +72,21 @@ spec:
           effect: "NoExecute"
           tolerationSeconds: 900
       volumes:
-        - name: configmap
+        - name: configmap-1
           configMap:
-            name: configmap-{{.Replica}}
-        - name: secret
+            name: configmap-{{.Replica}}-1
+        - name: configmap-2
+          configMap:
+            name: configmap-{{.Replica}}-2
+        - name: secret-1
           secret:
-            secretName: secret-{{.Replica}}
+            secretName: secret-{{.Replica}}-1
+        - name: secret-2
+          secret:
+            secretName: secret-{{.Replica}}-2
+        - name: secret-3
+          secret:
+            secretName: secret-{{.Replica}}-3
+        - name: secret-4
+          secret:
+            secretName: secret-{{.Replica}}-4
