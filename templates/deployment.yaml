@@ -74,19 +74,19 @@ spec:
       volumes:
         - name: configmap-1
           configMap:
-            name: configmap-{{.Replica}}-1
+            name: configmap1-{{.Replica}}
         - name: configmap-2
           configMap:
-            name: configmap-{{.Replica}}-2
+            name: configmap2-{{.Replica}}
         - name: secret-1
           secret:
-            secretName: secret-{{.Replica}}-1
+            secretName: secret1-{{.Replica}}
         - name: secret-2
           secret:
-            secretName: secret-{{.Replica}}-2
+            secretName: secret2-{{.Replica}}
         - name: secret-3
           secret:
-            secretName: secret-{{.Replica}}-3
+            secretName: secret3-{{.Replica}}
         - name: secret-4
           secret:
-            secretName: secret-{{.Replica}}-4
+            secretName: secret4-{{.Replica}}

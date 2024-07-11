@@ -25,9 +25,23 @@ jobs:
         replicas: 15
         inputVars:
           registry: {{ .REGISTRY }}
-      - objectTemplate: templates/configmap.yaml
-        replicas: 30
-      - objectTemplate: templates/secret.yaml
-        replicas: 60
+      
       - objectTemplate: templates/service.yaml
         replicas: 15
+      
+      
+      - objectTemplate: templates/configmap1.yaml
+        replicas: 15
+      - objectTemplate: templates/configmap2.yaml
+        replicas: 15
+
+      - objectTemplate: templates/secret1.yaml
+        replicas: 15
+      - objectTemplate: templates/secret2.yaml
+        replicas: 15
+      - objectTemplate: templates/secret3.yaml
+        replicas: 15
+      - objectTemplate: templates/secret4.yaml
+        replicas: 15
+
+
