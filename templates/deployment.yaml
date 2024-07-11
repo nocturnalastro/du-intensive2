@@ -11,7 +11,7 @@ metadata:
     group: load
     svc: du-workload-{{.Replica}}
 spec:
-  #runtimeClassName: performance-openshift-node-performance-profile
+  runtimeClassName: performance-openshift-node-performance-profile
   replicas: 1
   selector:
     matchLabels:
