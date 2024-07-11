@@ -1,12 +1,13 @@
 ## Kube-burner-ocp based template for a RAN DU workload
 
-### Pre-requisites to deploy workload:
+### Steps to deploy workload on an Openshift SNO:
 
-Mirror this container to registry in the hub (if spoke is disconnected)
+* Ensure $REGISTRY is set up in the environment
 
-https://github.com/abraham2512/fedora-stress-ng/pkgs/container/fedora-stress-ng
+* Mirror this container to registry in the hub (if spoke is disconnected) [fedora-stress-ng](https://github.com/abraham2512/fedora-stress-ng/pkgs/container/fedora-stress-ng)
 
-Ensure $REGISTRY is set up in the environment
+* Deploy DU workload with RAN RDS specs
+`kube-burner-ocp init --config du-workload.yml`
 
-Deploy DU workload with RAN RDS specs
-kube-burner-ocp init --config du-workload.yml
+* Attach kubelet traffic client/servers to DU
+`kube-burner-ocp init --config kubelet-stress.yml`
