@@ -21,6 +21,7 @@ jobs:
     cleanup: false
     waitWhenFinished: false
     objects:
+    # Template of Gu Pods with fedora-stress-ng
       - objectTemplate: templates/deployment.yaml
         replicas: 15
         inputVars:
@@ -44,4 +45,12 @@ jobs:
       - objectTemplate: templates/secret4.yaml
         replicas: 15
 
+    # Template of burstable pods with exec probes
+      - objectTemplate: templates/webserver-deployment.yml
+        replicas: 1
 
+      - objectTemplate: templates/webserver-service.yml
+        replicas: 1
+
+      - objectTemplate: templates/curl-deployment.yml
+        replicas: 1
