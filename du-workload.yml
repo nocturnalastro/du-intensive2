@@ -47,10 +47,10 @@ jobs:
 
     # Template of burstable pods with exec probes
       - objectTemplate: templates/webserver-deployment.yml
-        replicas: 1
+        replicas: 10
 
       - objectTemplate: templates/webserver-service.yml
-        replicas: 1
+        replicas: 10
 
       - objectTemplate: templates/curl-deployment.yml
-        replicas: 1
+        replicas: 10
