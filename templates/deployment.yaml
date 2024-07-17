@@ -29,18 +29,18 @@ spec:
           # Request and Limits must be identical for the Pod to be assigned to the QoS Guarantee
           resources:
             requests:
-              cpu: 24000m
+              cpu: 32000m
               memory: 1024M
               # hugepages-2Mi: 100Mi
             limits:
-              cpu: 24000m
+              cpu: 32000m
               memory: 1024M
               # hugepages-2Mi: 100Mi
           # securityContext:
           #   privileged: true
           env:
             - name: stress_cpu
-              value: "24"
+              value: "32"
             - name: stress_vm
               value: "1"
             - name: stress_vm-bytes
