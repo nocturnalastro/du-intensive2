@@ -40,7 +40,7 @@ spec:
           #   privileged: true
           env:
             - name: stress_cpu
-              value: "1"
+              value: "24"
             - name: stress_vm
               value: "1"
             - name: stress_vm-bytes
