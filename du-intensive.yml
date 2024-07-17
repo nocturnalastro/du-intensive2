@@ -12,34 +12,34 @@ jobs:
     objects:
     # Template of Gu Pods with fedora-stress-ng
       - objectTemplate: templates/deployment.yaml
-        replicas: 15
+        replicas: 1
         inputVars:
           registry: {{ .REGISTRY }}
       
       - objectTemplate: templates/service.yaml
-        replicas: 15
+        replicas: 1
       
       
       - objectTemplate: templates/configmap1.yaml
-        replicas: 15
+        replicas: 1
       - objectTemplate: templates/configmap2.yaml
-        replicas: 15
+        replicas: 1
 
       - objectTemplate: templates/secret1.yaml
-        replicas: 15
+        replicas: 1
       - objectTemplate: templates/secret2.yaml
-        replicas: 15
+        replicas: 1
       - objectTemplate: templates/secret3.yaml
-        replicas: 15
+        replicas: 1
       - objectTemplate: templates/secret4.yaml
-        replicas: 15
+        replicas: 1
 
     # Template of burstable pods with exec probes
       - objectTemplate: templates/webserver-deployment.yml
-        replicas: 10
+        replicas: 15
 
       - objectTemplate: templates/webserver-service.yml
-        replicas: 10
+        replicas: 15
 
       - objectTemplate: templates/curl-deployment.yml
-        replicas: 10
+        replicas: 15
