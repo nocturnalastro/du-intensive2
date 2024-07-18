@@ -1,0 +1,24 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: kubectlapp-{{.Replica}}-{{.Iteration}}
+spec:
+  template:
+    metadata:
+      labels:
+        name: kubectlapp-{{.Replica}}-{{.Iteration}}
+    spec:
+      nodeSelector:
+        node-role.kubernetes.io/worker: ""
+      containers:
+        - name: kubectlapp
+          image: bitnami/kubectl:latest
+          command: ["/bin/sh"]
+          args: ["-c", "while true; do kubectl get pod webserver-{{.Replica}} -o json; sleep 5; done"]
+      restartPolicy: Always
+  replicas: 1
+  selector:
+    matchLabels:
+      name: kubectlapp-{{.Replica}}-{{.Iteration}}
+  strategy:
+    type: RollingUpdate
