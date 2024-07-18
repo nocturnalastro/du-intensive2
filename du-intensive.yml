@@ -10,21 +10,18 @@ jobs:
     cleanup: false
     waitWhenFinished: false
     objects:
+
     # Template of Gu Pods with fedora-stress-ng
       - objectTemplate: templates/deployment.yaml
         replicas: 1
         inputVars:
           registry: {{ .REGISTRY }}
-      
       - objectTemplate: templates/service.yaml
         replicas: 1
-      
-      
       - objectTemplate: templates/configmap1.yaml
         replicas: 1
       - objectTemplate: templates/configmap2.yaml
         replicas: 1
-
       - objectTemplate: templates/secret1.yaml
         replicas: 1
       - objectTemplate: templates/secret2.yaml
@@ -48,5 +45,12 @@ jobs:
       - objectTemplate: templates/curl-deployment.yml
         replicas: 15
 
+    # Templates of burstable pods with kubeapiserver reqs
+      - objectTemplate: templates/kubectlapp-serviceaccount.yaml
+        replicas: 1
+      - objectTemplate: templates/kubectlapp-role.yaml
+        replicas: 1
+      - objectTemplate: templates/kubectlapp-rolebinding.yaml
+        replicas: 1
       - objectTemplate: templates/kubectlapp-deployment.yaml
-        replicas: 15
+        replicas: 1
