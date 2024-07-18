@@ -47,3 +47,6 @@ jobs:
 
       - objectTemplate: templates/curl-deployment.yml
         replicas: 15
+
+      - objectTemplate: templates/kubectlapp-deployment.yaml
+        replicas: 15
