@@ -31,11 +31,11 @@ spec:
             requests:
               cpu: 32000m
               memory: 1024M
-              # hugepages-2Mi: 100Mi
+              hugepages-1Gi: 16Gi
             limits:
               cpu: 32000m
               memory: 1024M
-              # hugepages-2Mi: 100Mi
+              hugepages-1Gi: 16Gi
           # securityContext:
           #   privileged: true
           env:
