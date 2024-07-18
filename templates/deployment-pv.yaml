@@ -8,5 +8,6 @@ spec:
     storage: 20Gi
   accessModes:
     - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Delete
   hostPath:
     path: "/mnt/data"
