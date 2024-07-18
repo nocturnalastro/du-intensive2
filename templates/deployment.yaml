@@ -58,6 +58,8 @@ spec:
               mountPath: /var/secret3
             - name: secret-4
               mountPath: /var/secret4
+            - name: pvc-storage
+              mountPath: /mnt/pvc-data
       dnsPolicy: Default
       terminationGracePeriodSeconds: 1
       # Add not-ready/unreachable tolerations for 15 minutes so that node
@@ -90,3 +92,6 @@ spec:
         - name: secret-4
           secret:
             secretName: secret4-{{.Replica}}
+        - name: pvc-storage
+          persistentVolumeClaim:
+            claimName: pvc-claim-20gb

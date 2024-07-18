@@ -33,6 +33,10 @@ jobs:
         replicas: 1
       - objectTemplate: templates/secret4.yaml
         replicas: 1
+      - objectTemplate: templates/deployment-pv.yaml
+        replicas: 1
+      - objectTemplate: templates/deployment-pvc.yaml
+        replicas: 1
 
     # Template of burstable pods with exec probes
       - objectTemplate: templates/webserver-deployment.yml
