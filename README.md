@@ -8,6 +8,3 @@
 
 * Deploy DU workload with RAN RDS specs
 `kube-burner-ocp init --config du-workload.yml`
-
-* Attach kubelet traffic client/servers to DU
-`kube-burner-ocp init --config kubelet-stress.yml`
