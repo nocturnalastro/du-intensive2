@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: pvc-claim-20gb
+  name: pvc-claim-20gb-{{.Replica}}
 spec:
   storageClassName: manual
   accessModes:
