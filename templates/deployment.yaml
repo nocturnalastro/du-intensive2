@@ -60,6 +60,8 @@ spec:
               mountPath: /var/secret4
             - name: pvc-storage
               mountPath: /mnt/pvc-data
+            - mountPath: /hugepages
+              name: hugepage
       dnsPolicy: Default
       terminationGracePeriodSeconds: 1
       # Add not-ready/unreachable tolerations for 15 minutes so that node
@@ -95,3 +97,6 @@ spec:
         - name: pvc-storage
           persistentVolumeClaim:
             claimName: pvc-claim-20gb-{{.Replica}}
+        - name: hugepage
+          emptyDir:
+            medium: HugePages
