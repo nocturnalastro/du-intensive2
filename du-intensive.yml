@@ -37,20 +37,18 @@ jobs:
 
     # Template of burstable pods with exec probes
       - objectTemplate: templates/webserver-deployment.yaml
-        replicas: 15
-
+        replicas: 10
       - objectTemplate: templates/webserver-service.yaml
-        replicas: 15
-
+        replicas: 10
       - objectTemplate: templates/curl-deployment.yaml
-        replicas: 15
+        replicas: 10
 
     # Templates of burstable pods with kubeapiserver reqs
       - objectTemplate: templates/kubectlapp-serviceaccount.yaml
-        replicas: 1
+        replicas: 10
       - objectTemplate: templates/kubectlapp-role.yaml
-        replicas: 1
+        replicas: 10
       - objectTemplate: templates/kubectlapp-rolebinding.yaml
-        replicas: 1
+        replicas: 10
       - objectTemplate: templates/kubectlapp-deployment.yaml
-        replicas: 1
+        replicas: 10
