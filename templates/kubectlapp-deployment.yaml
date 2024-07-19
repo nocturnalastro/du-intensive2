@@ -15,8 +15,17 @@ spec:
       containers:
         - name: kubectlapp
           image: bitnami/kubectl:latest
-          command: ["/bin/sh"]
-          args: ["-c", "while true; do kubectl get pods -n workload; sleep 5; done"]
+          command: ["/bin/sh","-c"]
+          args:
+          - |
+            while true; do
+              kubectl get pods --all-namespaces
+              kubectl get services --all-namespaces
+              kubectl get deployments --all-namespaces
+              kubectl get nodes
+              kubectl get events --all-namespaces
+              sleep 1
+            done
       restartPolicy: Always
   replicas: 1
   selector:
