@@ -5,5 +5,5 @@ metadata:
   namespace: workload
 rules:
 - apiGroups: [""]
-  resources: ["pods","services","deployments","nodes","events"]
+  resources: ["pods","services"]
   verbs: ["get", "watch", "list"]
