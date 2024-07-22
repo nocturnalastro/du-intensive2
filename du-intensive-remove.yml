@@ -27,6 +27,19 @@ jobs:
     objects:
       - kind: Service
         labelSelector: {kube-burner-job: du-workload}
+      - kind: ServiceAccount
+        labelSelector: {kube-burner-job: du-workload}
+
+  - name: remove-roles
+    qps: 2
+    burst: 2
+    jobType: delete
+    waitForDeletion: true
+    objects:
+      - kind: Role
+        labelSelector: {kube-burner-job: du-workload}
+      - kind: RoleBindings
+        labelSelector: {kube-burner-job: du-workload}
 
   - name: remove-configmaps-secrets
     qps: 2
