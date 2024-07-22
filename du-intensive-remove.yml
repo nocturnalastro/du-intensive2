@@ -44,3 +44,5 @@ jobs:
     objects:
       - kind: PersistentVolume
         labelSelector: {kube-burner-job: du-workload}
+      - kind: PersistentVolumeClaim
+        labelSelector: {kube-burner-job: du-workload}
