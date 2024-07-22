@@ -1,12 +1,12 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: webserver-{{.Replica}}-{{.Iteration}}
+  name: webserver-{{.Replica}}
 spec:
   template:
     metadata:
       labels:
-        name: webserver-{{.Replica}}-{{.Iteration}}
+        name: webserver-{{.Replica}}
     spec:
       nodeSelector:
         node-role.kubernetes.io/worker: ""
@@ -27,6 +27,6 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      name: webserver-{{.Replica}}-{{.Iteration}}
+      name: webserver-{{.Replica}}
   strategy:
     type: RollingUpdate

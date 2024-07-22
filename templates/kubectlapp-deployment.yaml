@@ -1,15 +1,15 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: kubectlapp-{{.Replica}}-{{.Iteration}}
+  name: kubectlapp-{{.Replica}}
   # namespace: workload
 spec:
   template:
     metadata:
       labels:
-        name: kubectlapp-{{.Replica}}-{{.Iteration}}
+        name: kubectlapp-{{.Replica}}
     spec:
-      serviceAccountName: kubectlapp-sa-{{.Replica}}-{{.Iteration}}
+      serviceAccountName: kubectlapp-sa-{{.Replica}}
       nodeSelector:
         node-role.kubernetes.io/worker: ""
       containers:
@@ -31,6 +31,6 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      name: kubectlapp-{{.Replica}}-{{.Iteration}}
+      name: kubectlapp-{{.Replica}}
   strategy:
     type: RollingUpdate

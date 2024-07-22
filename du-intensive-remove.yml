@@ -46,7 +46,7 @@ jobs:
     jobType: delete
     waitForDeletion: true
     objects:
-      - kind: Roles
+      - kind: Role
         labelSelector: {kube-burner-job: du-workload}
       - kind: RoleBinding
         labelSelector: {kube-burner-job: du-workload}

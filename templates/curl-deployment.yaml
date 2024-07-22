@@ -1,12 +1,12 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: curl-{{.Replica}}-{{.Iteration}}
+  name: curl-{{.Replica}}
 spec:
   template:
     metadata:
       labels:
-        name: curl-{{.Replica}}-{{.Iteration}}
+        name: curl-{{.Replica}}
     spec:
       nodeSelector:
         node-role.kubernetes.io/worker: ""
@@ -20,7 +20,7 @@ spec:
               memory: 128Mi
           env:
             - name: WEBSERVER_HOSTNAME
-              value: webserver-{{.Replica}}-{{.Iteration}}
+              value: webserver-{{.Replica}}
             - name: WEBSERVER_PORT
               value: "8080"
           imagePullPolicy: IfNotPresent
@@ -48,6 +48,6 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      name: curl-{{.Replica}}-{{.Iteration}}
+      name: curl-{{.Replica}}
   strategy:
     type: RollingUpdate
