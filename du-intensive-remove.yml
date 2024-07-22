@@ -23,6 +23,7 @@ jobs:
     qps: 2
     burst: 2
     jobType: delete
+    waitForDeletion: true
     objects:
       - kind: ConfigMap
         labelSelector: {kube-burner-job: du-workload}
@@ -57,7 +58,7 @@ jobs:
     jobType: delete
     waitForDeletion: true
     objects:
-      - kind: PersistentVolume
-        labelSelector: {kube-burner-job: du-workload}
       - kind: PersistentVolumeClaim
+        labelSelector: {kube-burner-job: du-workload}
+      - kind: PersistentVolume
         labelSelector: {kube-burner-job: du-workload}
