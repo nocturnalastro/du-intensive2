@@ -2,11 +2,11 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: pod-reader-binding-{{.Replica}}-{{.Iteration}}
-  namespace: workload
+  # namespace: workload
 subjects:
 - kind: ServiceAccount
   name: kubectlapp-sa-{{.Replica}}-{{.Iteration}}
-  namespace: workload
+  # namespace: workload
 roleRef:
   kind: Role
   name: pod-reader-{{.Replica}}-{{.Iteration}}

@@ -2,7 +2,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: pod-reader-{{.Replica}}-{{.Iteration}}
-  namespace: workload
+  # namespace: workload
 rules:
 - apiGroups: [""]
   resources: ["pods","services"]
