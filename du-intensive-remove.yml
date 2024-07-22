@@ -41,16 +41,17 @@ jobs:
       - kind: ServiceAccount
         labelSelector: {kube-burner-job: du-workload}
 
-  # - name: remove-roles
-  #   qps: 2
-  #   burst: 2
-  #   jobType: delete
-  #   waitForDeletion: true
-  #   objects:
-  #     - kind: Role
-  #       labelSelector: {kube-burner-job: du-workload}
-  #     - kind: RoleBinding
-  #       labelSelector: {kube-burner-job: du-workload}
+  - name: remove-roles
+    qps: 2
+    burst: 2
+    jobType: delete
+    namespace: workload
+    waitForDeletion: true
+    objects:
+      - kind: RoleBinding
+        labelSelector: {kube-burner-job: du-workload}
+      - kind: Role
+        labelSelector: {kube-burner-job: du-workload}
 
   - name: remove-volumes
     qps: 2
