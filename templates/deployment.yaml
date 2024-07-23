@@ -45,6 +45,12 @@ spec:
               value: "1"
             - name: stress_vm-bytes
               value: "512M"
+            - name: stress_hdd
+              value: "1"
+            - name: stress_hdd-bytes
+              value: "10%"
+            - name: stress_hdd-opts
+              value: "direct"
           volumeMounts:
             - name: configmap-1
               mountPath: /var/configmap1
