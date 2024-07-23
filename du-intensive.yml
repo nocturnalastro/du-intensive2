@@ -43,12 +43,13 @@ jobs:
       - objectTemplate: templates/curl-deployment.yaml
         replicas: 10
 
+    # Disabling kubectlapp in workload, pending resolution of kube-burner bug in roles -> https://github.com/kube-burner/kube-burner/issues/672
     # Templates of burstable pods with kubeapiserver reqs
-      - objectTemplate: templates/kubectlapp-serviceaccount.yaml
-        replicas: 10
-      - objectTemplate: templates/kubectlapp-role.yaml
-        replicas: 10
-      - objectTemplate: templates/kubectlapp-rolebinding.yaml
-        replicas: 10
-      - objectTemplate: templates/kubectlapp-deployment.yaml
-        replicas: 10
+      # - objectTemplate: templates/kubectlapp-serviceaccount.yaml
+      #   replicas: 10
+      # - objectTemplate: templates/kubectlapp-role.yaml
+      #   replicas: 10
+      # - objectTemplate: templates/kubectlapp-rolebinding.yaml
+      #   replicas: 10
+      # - objectTemplate: templates/kubectlapp-deployment.yaml
+      #   replicas: 10
