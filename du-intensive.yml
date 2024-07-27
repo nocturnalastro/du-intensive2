@@ -30,6 +30,12 @@ jobs:
         replicas: 1
       - objectTemplate: templates/secret4.yaml
         replicas: 1
+
+    # Template of Burstable pod with pvc 
+      - objectTemplate: templates/deployment-burstable.yaml
+        replicas: 1
+        inputVars:
+          registry: {{ .REGISTRY }}
       - objectTemplate: templates/deployment-pv.yaml
         replicas: 1
       - objectTemplate: templates/deployment-pvc.yaml
@@ -38,18 +44,24 @@ jobs:
     # Template of burstable pods with exec probes
       - objectTemplate: templates/webserver-deployment.yaml
         replicas: 10
+        inputVars:
+          registry: {{ .REGISTRY }}
       - objectTemplate: templates/webserver-service.yaml
         replicas: 10
       - objectTemplate: templates/curl-deployment.yaml
         replicas: 10
+        inputVars:
+          registry: {{ .REGISTRY }}
 
     # Disabling kubectlapp in workload, pending resolution of kube-burner bug in roles -> https://github.com/kube-burner/kube-burner/issues/672
     # Templates of burstable pods with kubeapiserver reqs
-      # - objectTemplate: templates/kubectlapp-serviceaccount.yaml
-      #   replicas: 10
-      # - objectTemplate: templates/kubectlapp-role.yaml
-      #   replicas: 10
-      # - objectTemplate: templates/kubectlapp-rolebinding.yaml
-      #   replicas: 10
-      # - objectTemplate: templates/kubectlapp-deployment.yaml
-      #   replicas: 10
+      - objectTemplate: templates/kubectlapp-serviceaccount.yaml
+        replicas: 10
+      - objectTemplate: templates/kubectlapp-role.yaml
+        replicas: 10
+      - objectTemplate: templates/kubectlapp-rolebinding.yaml
+        replicas: 10
+      - objectTemplate: templates/kubectlapp-deployment.yaml
+        replicas: 10
+        inputVars:
+          registry: {{ .REGISTRY }}
