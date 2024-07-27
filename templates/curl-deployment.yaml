@@ -12,7 +12,7 @@ spec:
         node-role.kubernetes.io/worker: ""
       containers:
         - name: curlapp
-          image: quay.io/cloud-bulldozer/curl:latest
+          image: "{{ .registry }}:5000/ran-test/curl:latest"
           command: ["sleep", "inf"]
           resources:
             requests:

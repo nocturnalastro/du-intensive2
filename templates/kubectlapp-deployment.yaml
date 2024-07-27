@@ -14,7 +14,7 @@ spec:
         node-role.kubernetes.io/worker: ""
       containers:
         - name: kubectlapp
-          image: bitnami/kubectl:latest
+          image: "{{ .registry }}:5000/ran-test/kubectl:latest"
           command: ["/bin/sh","-c"]
           args:
           - |
