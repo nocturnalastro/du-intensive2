@@ -53,7 +53,6 @@ jobs:
         inputVars:
           registry: {{ .REGISTRY }}
 
-    # Disabling kubectlapp in workload, pending resolution of kube-burner bug in roles -> https://github.com/kube-burner/kube-burner/issues/672
     # Templates of burstable pods with kubeapiserver reqs
       - objectTemplate: templates/kubectlapp-serviceaccount.yaml
         replicas: 10
