@@ -29,27 +29,36 @@ spec:
           # Request and Limits must be identical for the Pod to be assigned to the QoS Guarantee
           resources:
             requests:
-              cpu: 1000m
-              memory: 1024M
+              cpu: {{ or .CPURequest "1000m" }}
+              memory: {{ or .MemoryRequest "1024M" }}
             limits:
-              cpu: 2000m
-              memory: 2048M
+              cpu: {{ or .CPULimit (or .CPURequest "2000m") }}
+              memory: {{ or .MemoryLimit (or .MemoryRequest "2048M") }}
           # securityContext:
           #   privileged: true
           env:
+            {{if eq .Env  nil -}}
             - name: stress_cpu
-              value: "1"
+              value: {{ or .CPUStress "1" }}
             - name: stress_vm
-              value: "1"
+              value: {{ or .VMStress  "1" }}
             - name: stress_vm-bytes
-              value: "512M"
+              value: {{ or .VMStessBytes "512M" }}
             - name: stress_hdd
-              value: "1"
+              value: {{ or .HDDStress "1" }}
             - name: stress_hdd-bytes
-              value: "25"
+              value: {{ or .HDDStressBytes "25" }}
+            {{- else -}}
+            {{ range $name, $value := .Env }}
+            - name: {{ $name}}
+              value: {{ $value }}
+            {{- end -}}
+            {{- end }}
           volumeMounts:
-            - name: pvc-storage
-              mountPath: /mnt/pvc-data
+            {{ range  $volume := .volumes -}}
+            - name: {{ $volume.name }}
+              mountPath: {{ or $volume.path "/var/" + ($volume.name | replace " " "" | replace "-" "" | replace "_" "")  }}
+            {{- end }}
       dnsPolicy: Default
       terminationGracePeriodSeconds: 1
       # Add not-ready/unreachable tolerations for 15 minutes so that node
@@ -64,6 +73,14 @@ spec:
           effect: "NoExecute"
           tolerationSeconds: 900
       volumes:
-        - name: pvc-storage
-          persistentVolumeClaim:
-            claimName: pvc-claim-20gb-{{.Replica}}
+        {{ range  $volume := .volumes -}}
+        - name: {{ $volume.name }}
+          {{$volume.type}}:
+            {{if eq $volume.type "configMap"-}}
+            name: {{ $volume.name }}
+            {{- else if eq $volume.type "secret" -}}
+            secretName: {{ $volume.name }}
+            {{- else if eq $volume.type "persistentVolumeClaim" -}}
+            claimName: {{ $voume.name }}
+            {{- end -}}
+        {{- end }}

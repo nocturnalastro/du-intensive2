@@ -29,35 +29,34 @@ spec:
           # Request and Limits must be identical for the Pod to be assigned to the QoS Guarantee
           resources:
             requests:
-              cpu: 32000m
-              memory: 1024M
-              hugepages-1Gi: 16Gi
+              cpu: {{ or .CPULimit "32000m" }}
+              memory: {{ or .MemoryLimit "1024M" }}
+              hugepages-1Gi: {{ or .HugePagesLimit "16Gi" }}
             limits:
-              cpu: 32000m
-              memory: 1024M
-              hugepages-1Gi: 16Gi
+              cpu: {{ or .CPULimit "32000m" }}
+              memory: {{ or .MemoryLimit "1024M" }}
+              hugepages-1Gi: {{ or .HugePagesLimit "16Gi" }}
           # securityContext:
           #   privileged: true
           env:
-            - name: stress_cpu
-              value: "32"
-            - name: stress_vm
-              value: "1"
-            - name: stress_vm-bytes
-              value: "512M"
+            {{if eq .Env  nil -}}
+                  - name: stress_cpu
+                    value: {{ or .CPUStress "32" }}
+                  - name: stress_vm
+                    value: {{or .VMStress  "1" }}
+                  - name: stress_vm-bytes
+                    value: {{or .VMStessBytes "512M" }}
+            {{- else -}}
+            {{ range $name, $value := .Env }}
+            - name: {{ $name}}
+              value: {{ $value }}
+            {{- end -}}
+            {{- end }}
           volumeMounts:
-            - name: configmap-1
-              mountPath: /var/configmap1
-            - name: configmap-2
-              mountPath: /var/configmap2
-            - name: secret-1
-              mountPath: /var/secret1
-            - name: secret-2
-              mountPath: /var/secret2
-            - name: secret-3
-              mountPath: /var/secret3
-            - name: secret-4
-              mountPath: /var/secret4
+            {{ range  $volume := .volumes -}}
+              - name: {{ $volume.name }}
+                mountPath: {{ or $volume.path "/var/" + ($volume.name | replace " " "" | replace "-" "" | replace "_" "")  }}
+            {{- end }}
             - name: hugepage
               mountPath: /hugepages
       dnsPolicy: Default
@@ -74,24 +73,17 @@ spec:
           effect: "NoExecute"
           tolerationSeconds: 900
       volumes:
-        - name: configmap-1
-          configMap:
-            name: configmap1-{{.Replica}}
-        - name: configmap-2
-          configMap:
-            name: configmap2-{{.Replica}}
-        - name: secret-1
-          secret:
-            secretName: secret1-{{.Replica}}
-        - name: secret-2
-          secret:
-            secretName: secret2-{{.Replica}}
-        - name: secret-3
-          secret:
-            secretName: secret3-{{.Replica}}
-        - name: secret-4
-          secret:
-            secretName: secret4-{{.Replica}}
+        {{ range  $volume := .volumes -}}
+        - name: {{ $volume.name }}
+          {{$volume.type}}:
+            {{if eq $volume.type "configMap"-}}
+            name: {{ $volume.name }}
+            {{- else if eq $volume.type "secret" -}}
+            secretName: {{ $volume.name }}
+            {{- else if eq $volume.type "persistentVolumeClaim" -}}
+            claimName: {{ $voume.name }}
+            {{- end -}}
+        {{- end }}
         - name: hugepage
           emptyDir:
             medium: HugePages

@@ -1,7 +1,11 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: configmap1-{{.Replica}}
+  {{if eq .group nil }}
+  name: configmap-{{ .group }}-{{.Replica}}
+  {{ else }}
+  name: configmap-{{.Replica}}
+  {{ end }}
 data:
   data.yaml: |-
     a: 1
