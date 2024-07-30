@@ -38,15 +38,15 @@ jobs:
 
     # Template of Burstable pod with pvc
       - objectTemplate: templates/burstable/pv.yaml
-        replicas: 2
+        replicas: 1
       - objectTemplate: templates/burstable/pvc.yaml
-        replicas: 2
+        replicas: 1
       - objectTemplate: templates/burstable/deployment.yaml
         replicas: 1
         inputVars:
           Image: {{ .FEDORA_STRESSNG_TEST_IMAGE }}
           volumes:
-            - name: pvc-claim-20gb-1
+            - name: pvc-claim-1
               type: persistentVolumeClaim
               path: /mnt/pvc-data
       - objectTemplate: templates/deployment-pv.yaml

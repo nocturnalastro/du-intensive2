@@ -4,7 +4,7 @@ metadata:
   name: service-{{.Replica}}
 spec:
   selector:
-    name: du-workload-{{.Replica}}
+    service-label: du-workload-gu-{{.Replica}}
   ports:
-    - port: 80
-      targetPort: 80
+    - port: {{ or .port 80 }}
+      targetPort: {{ or .targetPort 80 }}

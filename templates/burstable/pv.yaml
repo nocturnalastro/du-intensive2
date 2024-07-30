@@ -1,13 +1,17 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: pv-volume-20gb-{{.Replica}}
+  {{ if eq .group nil }}
+  name: pv-volume-{{ .group }}-{{.Replica}}
+  {{ else }}
+  name: pv-volume-{{.Replica}}
+  {{ end }}
 spec:
-  storageClassName: manual
+  storageClassName: {{ or .class "manual" }}
   capacity:
-    storage: 20Gi
+    storage: {{ or .capacity "20Gi" }}
   accessModes:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Delete
   hostPath:
-    path: "/mnt/data"
+    path: {{ or .path "/mnt/data" }}

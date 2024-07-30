@@ -20,8 +20,9 @@ spec:
       labels:
         group: load
         name: du-workload-{{.Replica}}
+        service-label: du-workload-gu-{{.Replica}}
     spec:
-      runtimeClassName: performance-openshift-node-performance-profile
+      runtimeClassName: {{ or .runtimeClassName "performance-openshift-node-performance-profile" }}
       containers:
         - image: "{{ .Image }}"
           imagePullPolicy: Always

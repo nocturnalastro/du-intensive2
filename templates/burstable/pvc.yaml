@@ -1,11 +1,15 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: pvc-claim-20gb-{{.Replica}}
+  {{ if eq .group nil }}
+  name: pvc-claim-{{ .group }}-{{.Replica}}
+  {{ else }}
+  name: pvc-claim-{{.Replica}}
+  {{ end }}
 spec:
-  storageClassName: manual
+  storageClassName: {{ or .class "manual" }}
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 20Gi
+      storage: {{ or .capacity "20Gi" }}

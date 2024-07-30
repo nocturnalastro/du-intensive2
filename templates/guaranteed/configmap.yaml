@@ -6,9 +6,12 @@ metadata:
   {{ else }}
   name: configmap-{{.Replica}}
   {{ end }}
+{{ if eq .data nil }}
+data: {{ .data | toJson }}
+{{ else }}
 data:
   data.yaml: |-
     a: 1
     b: 2
     c: 3
-
+{{ end }}
