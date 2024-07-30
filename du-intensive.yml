@@ -12,19 +12,21 @@ jobs:
     objects:
 
     # Template of Gu Pods with fedora-stress-ng
-      - objectTemplate: templates/service.yaml
+      - objectTemplate: templates/guaranteed/service.yaml
         replicas: 1
-      - objectTemplate: templates/configmap1.yaml
+      - objectTemplate: templates/guaranteed/configmap.yaml
         replicas: 2
-      - objectTemplate: templates/secret1.yaml
+      - objectTemplate: templates/guaranteed/secret.yaml
         replicas: 4
-      - objectTemplate: templates/deployment.yaml
+      - objectTemplate: templates/guaranteed/deployment.yaml
         replicas: 1
         inputVars:
           Image: {{ .FEDORA_STRESSNG_TEST_IMAGE }}
           volumes:
             - name: secret-1
+              type: secret
             - name: secret-2
+              type: secret
             - name: configmap-1
               type: configMap
             - name: configmap-2
@@ -34,8 +36,12 @@ jobs:
             - name: configmap-4
               type: configMap
 
-      # Template of Burstable pod with pvc
-      - objectTemplate: templates/deployment-burstable.yaml
+    # Template of Burstable pod with pvc
+      - objectTemplate: templates/burstable/pv.yaml
+        replicas: 2
+      - objectTemplate: templates/burstable/pvc.yaml
+        replicas: 2
+      - objectTemplate: templates/burstable/deployment.yaml
         replicas: 1
         inputVars:
           Image: {{ .FEDORA_STRESSNG_TEST_IMAGE }}
@@ -49,25 +55,25 @@ jobs:
         replicas: 1
 
     # Template of burstable pods with exec probes
-      - objectTemplate: templates/webserver-deployment.yaml
+      - objectTemplate: templates/webserver/server-deployment.yaml
         replicas: 10
         inputVars:
           Image: {{ .NGINX_TEST_IMAGE }}
-      - objectTemplate: templates/webserver-service.yaml
+      - objectTemplate: templates/webserver/service.yaml
         replicas: 10
-      - objectTemplate: templates/curl-deployment.yaml
+      - objectTemplate: templates/webserver/client-deployment.yaml
         replicas: 10
         inputVars:
           Image: {{ .CURL_TEST_IMAGE }}
 
     # Templates of burstable pods with kubeapiserver reqs
-      - objectTemplate: templates/kubectlapp-serviceaccount.yaml
+      - objectTemplate: templates/kubectlapp/serviceaccount.yaml
         replicas: 10
-      - objectTemplate: templates/kubectlapp-role.yaml
+      - objectTemplate: templates/kubectlapp/role.yaml
         replicas: 10
-      - objectTemplate: templates/kubectlapp-rolebinding.yaml
+      - objectTemplate: templates/kubectlapp/rolebinding.yaml
         replicas: 10
-      - objectTemplate: templates/kubectlapp-deployment.yaml
+      - objectTemplate: templates/kubectlapp/deployment.yaml
         replicas: 10
         inputVars:
           Image: {{ .KUBECTL_TEST_IMAGE }}
