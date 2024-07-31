@@ -20,7 +20,4 @@ This workload is intended to be deployed by the ocp-far-edge-vran pipeline but t
 * Run the cpu_util test using ocp-far-edge-vran-tests pipeline
 
 ### Steps to run locally
-* Ensure container images are available in local registry image repository
-* Setup $REGISTRY env variable
-* Deploy DU workload with RAN RDS specs
-`kube-burner init --config du-workload.yml`
+* Deploy DU workload with `start.sh`
