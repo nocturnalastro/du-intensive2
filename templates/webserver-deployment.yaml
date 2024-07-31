@@ -12,7 +12,7 @@ spec:
         node-role.kubernetes.io/worker: ""
       containers:
       - name: webserver
-        image: "{{ .registry }}/ran-test/sampleapp:latest"
+        image: "{{ .Image }}"
         resources:
           requests:
             cpu: 100m

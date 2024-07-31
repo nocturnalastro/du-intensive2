@@ -23,7 +23,7 @@ spec:
     spec:
       runtimeClassName: performance-openshift-node-performance-profile
       containers:
-        - image: "{{ .registry }}/ran-test/fedora-stress-ng:master"
+        - image: "{{ .Image }}"
           imagePullPolicy: Always
           name: du-workload-{{.Replica}}
           # Request and Limits must be identical for the Pod to be assigned to the QoS Guarantee

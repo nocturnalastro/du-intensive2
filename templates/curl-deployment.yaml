@@ -12,7 +12,7 @@ spec:
         node-role.kubernetes.io/worker: ""
       containers:
         - name: curlapp
-          image: "{{ .registry }}/ran-test/curl:latest"
+          image: "{{ .Image }}"
           command: ["sleep", "inf"]
           resources:
             requests:

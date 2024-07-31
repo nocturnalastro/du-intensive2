@@ -15,7 +15,7 @@ jobs:
       - objectTemplate: templates/deployment.yaml
         replicas: 1
         inputVars:
-          registry: {{ .REGISTRY }}
+          Image: {{ .FEDORA_STRESSNG_TEST_IMAGE }}
       - objectTemplate: templates/service.yaml
         replicas: 1
       - objectTemplate: templates/configmap1.yaml
@@ -35,7 +35,7 @@ jobs:
       - objectTemplate: templates/deployment-burstable.yaml
         replicas: 1
         inputVars:
-          registry: {{ .REGISTRY }}
+          Image: {{ .FEDORA_STRESSNG_TEST_IMAGE }}
       - objectTemplate: templates/deployment-pv.yaml
         replicas: 1
       - objectTemplate: templates/deployment-pvc.yaml
@@ -45,13 +45,13 @@ jobs:
       - objectTemplate: templates/webserver-deployment.yaml
         replicas: 10
         inputVars:
-          registry: {{ .REGISTRY }}
+          Image: {{ .NGINX_TEST_IMAGE }}
       - objectTemplate: templates/webserver-service.yaml
         replicas: 10
       - objectTemplate: templates/curl-deployment.yaml
         replicas: 10
         inputVars:
-          registry: {{ .REGISTRY }}
+          Image: {{ .CURL_TEST_IMAGE }}
 
     # Templates of burstable pods with kubeapiserver reqs
       - objectTemplate: templates/kubectlapp-serviceaccount.yaml
@@ -63,4 +63,4 @@ jobs:
       - objectTemplate: templates/kubectlapp-deployment.yaml
         replicas: 10
         inputVars:
-          registry: {{ .REGISTRY }}
+          Image: {{ .KUBECTL_TEST_IMAGE }}

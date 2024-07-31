@@ -14,7 +14,7 @@ spec:
         node-role.kubernetes.io/worker: ""
       containers:
         - name: kubectlapp
-          image: "{{ .registry }}/ran-test/kubectl:latest"
+          image: "{{ .Image }}"
           command: ["/bin/sh","-c"]
           args:
           - |
