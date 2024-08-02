@@ -40,7 +40,7 @@ spec:
           # securityContext:
           #   privileged: true
           env:
-            {{if eq .Env  nil -}}
+            {{if eq .containerEnv  nil -}}
                   - name: stress_cpu
                     value: {{ or .CPUStress "32" }}
                   - name: stress_vm
@@ -48,7 +48,7 @@ spec:
                   - name: stress_vm-bytes
                     value: {{or .VMStessBytes "512M" }}
             {{- else -}}
-            {{ range $name, $value := .Env }}
+            {{ range $name, $value := .containerEnv }}
             - name: {{ $name}}
               value: {{ $value }}
             {{- end -}}
