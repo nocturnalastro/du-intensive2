@@ -56,7 +56,7 @@ spec:
           volumeMounts:
             {{ range  $volume := .volumes -}}
               - name: {{ $volume.name }}
-                mountPath: {{ or $volume.path "/var/" + ($volume.name | replace " " "" | replace "-" "" | replace "_" "")  }}
+                mountPath: {{ or $volume.path ((list "/var/" ($volume.name | replace " " "" | replace "-" "" | replace "_" "")) | join "") }}
             {{- end }}
             - name: hugepage
               mountPath: /hugepages
@@ -74,17 +74,18 @@ spec:
           effect: "NoExecute"
           tolerationSeconds: 900
       volumes:
-        {{ range  $volume := .volumes -}}
+        {{ range  $volume := .volumes }}
         - name: {{ $volume.name }}
           {{$volume.type}}:
-            {{if eq $volume.type "configMap"-}}
+
+            {{ if eq $volume.type "configMap" }}
             name: {{ $volume.name }}
-            {{- else if eq $volume.type "secret" -}}
+            {{ else if eq $volume.type "secret" }}
             secretName: {{ $volume.name }}
-            {{- else if eq $volume.type "persistentVolumeClaim" -}}
-            claimName: {{ $voume.name }}
-            {{- end -}}
-        {{- end }}
+            {{ else if eq $volume.type "persistentVolumeClaim" }}
+            claimName: {{ $volume.name }}
+            {{ end }}
+        {{ end }}
         - name: hugepage
           emptyDir:
-            medium: HugePages
+            medium: HugePage
