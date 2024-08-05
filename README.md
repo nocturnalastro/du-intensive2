@@ -9,7 +9,6 @@ This repository holds the templates for a DU workload that is deployed with [kub
 | BestEffort - web_server | 10 pods | - 100 mc CPU, 128 Mib Memory<br>- 2 configmaps and 4 secrets<br>- 10 svc<br> | Exposes 8080 port for probes|
 | BestEffort - curl_app | 10 pods | - 100 mc CPU, 128 Mib Memory<br>- Liveness Probes (every 10 secs)| Kubelet stress with probes, ~10-30% increase |
 | BestEffort - kubectl_pods | 10 pods | - 100 mc CPU , 128 Mib Memory<br>- kubectl get (every 1 sec) | Kube-api-server stress with kubectl get, ~50% increase |
-| BestEffort - pvc_stress | 1 pod | - 1000 CPU, 1 GiB Memory, 1 GiB HP<br>- 2 configmaps and 4 secrets<br>- 1 svc<br> | 20% disk io stress |
 
 This workload is intended to be deployed by the ocp-far-edge-vran pipeline but the templates can be run locally using kube-burner
 
