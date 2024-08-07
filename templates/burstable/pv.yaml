@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  {{ if eq .group nil }}
-  name: pv-volume-{{ .group }}-{{.Replica}}
+  {{ if eq .group nil  }}
+  name: pv-volume-{{or .Replica 0 }}
   {{ else }}
-  name: pv-volume-{{.Replica}}
+  name: pv-volume-{{ .group }}-{{ or .Replica 0 }}
   {{ end }}
 spec:
   storageClassName: {{ or .class "manual" }}

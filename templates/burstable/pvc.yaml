@@ -2,9 +2,9 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   {{ if eq .group nil }}
-  name: pvc-claim-{{ .group }}-{{.Replica}}
+  name: pvc-claim-{{ or .Replica 0 }}
   {{ else }}
-  name: pvc-claim-{{.Replica}}
+  name: pvc-claim-{{ .group }}-{{ or .Replica 0 }}
   {{ end }}
 spec:
   storageClassName: {{ or .class "manual" }}

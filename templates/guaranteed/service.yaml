@@ -1,10 +1,11 @@
-apiVersion: v1
-kind: Service
-metadata:
-  name: service-{{.Replica}}
-spec:
-  selector:
-    service-label: du-workload-gu-{{.Replica}}
-  ports:
-    - port: {{ or .port 80 }}
-      targetPort: {{ or .targetPort 80 }}
+    apiVersion: v1
+    kind: Service
+    metadata:
+      name: service-{{ or .Replica 0 }}
+    spec:
+      selector:
+        service-label: du-workload-gu-{{ or .Replica 0 }}
+      ports:
+          - port: {{ or .port 80 }}
+            targetPort: {{ or .targetPort 80 }}
+  

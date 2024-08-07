@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: du-workload-bu-{{.Replica}}
+  name: du-workload-bu-{{ or .Replica 0 }}
   annotations:
     # Disable CPU balance with CRIO
     irq-load-balancing.crio.io: "disable"
@@ -9,23 +9,23 @@ metadata:
     cpu-quota.crio.io: "disable"
   labels:
     group: load
-    svc: du-workload-bu-{{.Replica}}
+    svc: du-workload-bu-{{ or .Replica 0 }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      name: du-workload-bu-{{.Replica}}
+      name: du-workload-bu-{{ or .Replica 0 }}
   template:
     metadata:
       labels:
         group: load
-        name: du-workload-bu-{{.Replica}}
+        name: du-workload-bu-{{ or .Replica 0 }}
     spec:
       runtimeClassName: {{ or .runtimeClassName "performance-openshift-node-performance-profile" }}
       containers:
         - image: "{{ .Image }}"
           imagePullPolicy: Always
-          name: du-workload-bu-{{.Replica}}
+          name: du-workload-bu-{{ or .Replica 0 }}
           # Request and Limits must be identical for the Pod to be assigned to the QoS Guarantee
           resources:
             requests:
@@ -37,28 +37,28 @@ spec:
           # securityContext:
           #   privileged: true
           env:
-            {{if eq .containerEnv  nil -}}
+            {{ if eq .containerEnv  nil }}
             - name: stress_cpu
-              value: {{ or .CPUStress "1" }}
+              value: {{ or .CPUStress "1" | quote}}
             - name: stress_vm
-              value: {{ or .VMStress  "1" }}
+              value: {{ or .VMStress  "1" | quote}}
             - name: stress_vm-bytes
-              value: {{ or .VMStessBytes "512M" }}
+              value: {{ or .VMStessBytes "512M" | quote}}
             - name: stress_hdd
-              value: {{ or .HDDStress "1" }}
+              value: {{ or .HDDStress "1" | quote}}
             - name: stress_hdd-bytes
-              value: {{ or .HDDStressBytes "25" }}
-            {{- else -}}
+              value: {{ or .HDDStressBytes "25000000.0" | quote }}
+            {{ else }}
             {{ range $name, $value := .containerEnv }}
             - name: {{ $name}}
-              value: {{ $value }}
-            {{- end -}}
-            {{- end }}
+              value: {{ $value | quote }}
+            {{ end }}
+            {{ end }}
           volumeMounts:
-            {{ range  $volume := .volumes -}}
-              - name: {{ $volume.name }}
-                mountPath: {{ or $volume.path ((list "/var/" ($volume.name | replace " " "" | replace "-" "" | replace "_" "")) | join "") }}
-            {{- end }}
+            {{ range  $volume := .volumes }}
+            - name: {{ $volume.name }}
+              mountPath: {{ or $volume.path ((list "/var/" ($volume.name | replace " " "" | replace "-" "" | replace "_" "")) | join "") }}
+            {{ end }}
       dnsPolicy: Default
       terminationGracePeriodSeconds: 1
       # Add not-ready/unreachable tolerations for 15 minutes so that node
@@ -75,12 +75,14 @@ spec:
       volumes:
         {{ range  $volume := .volumes }}
         - name: {{ $volume.name }}
-          {{$volume.type}}:
-            {{ if eq $volume.type "configMap" }}
+          {{ if eq $volume.type "configMap" }}
+          configMap:
             name: {{ $volume.name }}
-            {{ else if eq $volume.type "secret" }}
+          {{ else if eq $volume.type "secret" }}
+          secret:
             secretName: {{ $volume.name }}
-            {{ else if eq $volume.type "persistentVolumeClaim" }}
+          {{ else if eq $volume.type "persistentVolumeClaim" }}
+          persistentVolumeClaim:
             claimName: {{ $volume.name }}
-            {{ end }}
+          {{ end }}
         {{ end }}

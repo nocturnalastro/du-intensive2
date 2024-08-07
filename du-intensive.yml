@@ -9,10 +9,12 @@ jobs:
     podWait: false
     cleanup: false
     waitWhenFinished: false
+    DefaultMissingKeysWithZero: true
     objects:
 
     # Template of Gu Pods with fedora-stress-ng
       - objectTemplate: templates/guaranteed/service.yaml
+
         replicas: 1
       - objectTemplate: templates/guaranteed/configmap.yaml
         replicas: 2
@@ -49,10 +51,6 @@ jobs:
             - name: pvc-claim-1
               type: persistentVolumeClaim
               path: /mnt/pvc-data
-      - objectTemplate: templates/deployment-pv.yaml
-        replicas: 1
-      - objectTemplate: templates/deployment-pvc.yaml
-        replicas: 1
 
     # Template of burstable pods with exec probes
       - objectTemplate: templates/webserver/server-deployment.yaml

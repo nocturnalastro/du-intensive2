@@ -2,9 +2,9 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   {{if eq .group nil }}
-  name: configmap-{{ .group }}-{{.Replica}}
+  name: configmap-{{ or .Replica 0 }}
   {{ else }}
-  name: configmap-{{.Replica}}
+  name: configmap-{{ .group }}-{{ or .Replica 0 }}
   {{ end }}
 {{ if eq .data nil }}
 data: {{ .data | toJson }}

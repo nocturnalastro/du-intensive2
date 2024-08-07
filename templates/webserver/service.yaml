@@ -1,10 +1,10 @@
 kind: Service
 apiVersion: v1
 metadata:
-  name: webserver-{{.Replica}}
+  name: webserver-{{ or .Replica 0 }}
 spec:
   selector:
-    name: webserver-{{.Replica}}
+    name: webserver-{{ or .Replica 0 }}
   ports:
   - protocol: TCP
     port: 8080
