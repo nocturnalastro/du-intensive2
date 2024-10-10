@@ -84,19 +84,23 @@ spec:
       dnsPolicy: Default
       terminationGracePeriodSeconds: 1
       volumes:
-        {{ range  $volume := .volumes }}
+        {{- range  $volume := .volumes }}
         - name: {{ $volume.name }}
-          {{ if eq $volume.type "configMap" }}
+          {{- if eq $volume.type "configMap" }}
           configMap:
             name: {{ $volume.name }}
-          {{ else if eq $volume.type "secret" }}
+          {{- else if eq $volume.type "secret" }}
           secret:
             secretName: {{ $volume.name }}
-          {{ else if eq $volume.type "persistentVolumeClaim" }}
+          {{- else if eq $volume.type "persistentVolumeClaim" }}
           persistentVolumeClaim:
             claimName: {{ $volume.name }}
-          {{ end }}
-        {{ end }}
+          {{- else if eq $volume.type "emptyDir" }}
+          emptyDir: {}
+          {{- else if eq $volume.type "emptyDirWithConfig" }}
+          emptyDir: {{ $volume.emptyDirConfig | toJson }}
+          {{- end }}
+        {{- end }}
         - name: hugepage
           emptyDir:
             medium: HugePages

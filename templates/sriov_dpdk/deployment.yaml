@@ -1,0 +1,110 @@
+{{- $networks := list}}
+{{- range $net := .networks}}
+{{- $networks = append $networks $net.network }}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dpdk-deployment-{{ .Replica }}
+  labels:
+    app: dpdk-deployment-{{ .Replica }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dpdk-deployment-{{ .Replica }}
+  template:
+    metadata:
+      labels:
+        app: dpdk-deployment-{{ .Replica }}
+      annotations:
+        {{- if .scc_privileged }}
+        openshift.io/required-scc: privileged
+        {{- end }}
+        cpu-load-balancing.crio.io: disable
+        cpu-quota.crio.io: disable
+        irq-load-balancing.crio.io: disable
+        k8s.v1.cni.cncf.io/networks: {{ $networks | toJson | quote}}
+    spec:
+      shareProcessNamespace: true
+      serviceAccountName: sriovdpdksa
+      runtimeClassName: {{ or .performanceProfile "performance-openshift-node-performance-profile" }}
+      containers:
+        - image: {{ .Image_dpdk }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              ALWD_CPUS=`cat /proc/self/status | grep 'Cpus_allowed_list' | sed 's/Cpus_allowed_list://' | awk -F"," '{print $1}'`
+              tail -f /dev/null | dpdk-testpmd --iova-mode=va -- --portmask=0x1 --nb-cores=2 --forward-mode=mac --port-topology=loop --auto-start --stats-period 1 2>&1 &
+              sleep infinity
+          imagePullPolicy: {{ or .imagePullPolicy "Always"}}
+          livenessProbe:
+            exec:
+              command:
+                - ls
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 7
+          name: dpdk-1
+          resources:
+            limits:
+              cpu: {{(or .cpu_limit "16") | quote }}
+              hugepages-1Gi: {{(or .hugepages_limit "16Gi") | quote }}
+              memory: {{(or .mem_limit "32Gi") | quote }}
+              {{ .du_accelerator_model }}
+              {{- range $net :=  .networks }}
+              {{ $net.resource }}: "1"
+              {{- end }}
+              {{ if .accelerator_model }}
+              {{ .accelerator_model | quote }}: "1"
+              {{- end }}
+            requests:
+              cpu: {{ (or .cpu_limit "16") | quote }}
+              hugepages-1Gi: {{(or .hugepages_limit "16Gi") | quote }}
+              memory: {{(or .mem_limit "32Gi") | quote }}
+              {{- range $net :=  .networks }}
+              {{ $net.resource }}: "1"
+              {{- end }}
+          securityContext:
+            privileged: true
+            capabilities:
+              add:
+                - IPC_LOCK
+                - NET_ADMIN
+                - NET_BIND_SERVICE
+                - SYS_NICE
+                - NET_RAW
+              drop:
+                - ALL
+            runAsUser: 0
+          volumeMounts:
+            - mountPath: /dev/hugepages
+              name: hugepage
+            {{- range  $volume := .volumes }}
+            - name: {{ $volume.name }}
+              mountPath: {{ $volume.path }}
+            {{- end }}
+      volumes:
+        - emptyDir: {}
+          name: shared-sockets
+        - emptyDir:
+            medium: HugePages
+          name: hugepage
+        {{- range  $volume := .volumes }}
+        - name: {{ $volume.name }}
+          {{- if eq $volume.type "configMap" }}
+          configMap:
+            name: {{ $volume.name }}
+          {{- else if eq $volume.type "secret" }}
+          secret:
+            secretName: {{ $volume.name }}
+          {{- else if eq $volume.type "persistentVolumeClaim" }}
+          persistentVolumeClaim:
+            claimName: {{ $volume.name }}
+          {{- else if eq $volume.type "emptyDir" }}
+          emptyDir: {{ (or $volume.emptyDirConfig dict) | toJson  }}
+          {{- end }}
+        {{- end }}

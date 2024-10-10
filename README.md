@@ -8,6 +8,7 @@ Templates for a DU workload deployed with [kube-burner](https://github.com/kube-
 | BestEffort - web_server | 4 pods, 2 containers each | - 100 mc CPU, 128 Mib Memory<br>- 2 configmaps and 4 secrets<br> | Exposes 8080 port for probes |
 | BestEffort - curl_app | 4 pods, 2 containers each | - 100 mc CPU, 128 Mib Memory<br>- 2 configmaps and 4 secrets<br>- Liveness Probes (every 10 secs)| Kubelet stress with probes, ~250 KB per sec n/w traffic on Primary CNI |
 | BestEffort - kubectl_pods | 6 pods, 2 containers each | - 100 mc CPU , 128 Mib Memory<br>- 2 configmaps and 4 secrets<br>- 2 kubectl gets (every 5 sec) | Kube-api-server stress with kubectl get, ~10% increase due to workload |
+| BestEffort - sriov_dpdk | 1 pod, 
 
 * Total pods - 15 pods / 30 containers
 * 2 config maps and 4 secrets in each pod
@@ -29,8 +30,28 @@ Templates for a DU workload deployed with [kube-burner](https://github.com/kube-
 * run the following
 
     ```shell
+    export STORAGE_CLASS="" # Defaults to general
+    export NETWORKS="" # SRIOV Networks to use for DPDK container if blank then DPDK container will not be added
     export REGISTRY="" # For a connected cluster
-    export NODE_NAME=$( oc get nodes -ojson | jq .items[0].metadata.name -r) # For SNO
+    export NODE_NAME=$(oc get nodes -ojson | jq .items[0].metadata.name -r) # For SNO
     export KUBECONFIG="..."
     kube-burner init --config du-intensive.yaml
     ```
+
+#### Running DPDK deployment
+
+Running the DPDK pod requires the defintion of the a `NETWORKS` env var. `$NETWORKS` should be a list of objects of the following form:
+
+```json
+[
+    {
+        "network": [1],
+        "resource": [2]
+    }
+]
+```
+
+* [1] The structure for the `k8s.v1.cni.cncf.io/networks` annotation.
+      It should represent the networks you wish to connect to to the DPDK pod  e.g. `{"name": "myNetwork", "namespace": "otherNs"}`.
+      It will be combined into a json list.
+* [2] The key for the resource e.g. `openshift.io/pci_sriov_net_myNetwork`.

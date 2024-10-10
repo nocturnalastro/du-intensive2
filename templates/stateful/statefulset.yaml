@@ -1,0 +1,187 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: stateful-{{ .Replica }}
+  labels:
+    app: du-workload-stateful
+spec:
+  replicas: 1
+  serviceName: du-workload-stateful-{{ .Replica }}
+  selector:
+    matchLabels:
+      app: du-workload-stateful-{{ .Replica }}
+  template:
+    metadata:
+      labels:
+        app: du-workload-stateful-{{ .Replica }}
+    spec:
+      containers:
+        - name: du-workload-stateful-{{ .Replica }}-c1
+          env:
+            - name: TZ
+              value: UTC
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+          image: registry.redhat.io/ubi8/ubi
+          command: ["/bin/sh"]
+          args: ["-c", "while true; do sleep 10;done"]
+          imagePullPolicy: IfNotPresent
+          livenessProbe: {{- if .livenessProbe }}{{ .livenessProbe | toJson }}
+          {{- else }}
+            exec:
+              command:
+              - ls
+            failureThreshold: 3
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 15
+          {{- end }}
+          readinessProbe: {{- if .readinessProbe }}{{ .readinessProbe | toJson }}
+          {{- else }}
+            exec:
+              command:
+              - ls
+            failureThreshold: 3
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 15
+          {{- end }}
+          resources:
+            limits:
+              cpu: {{or .cpu_limit "157m"}}
+              memory: {{or .memory_limit "300Mi"}}
+            requests:
+              cpu: {{or .cpu_request "125m"}}
+              memory: {{or .memory_request "200Mi"}}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - MKNOD
+                - all
+            privileged: false
+            readOnlyRootFilesystem: false
+            runAsNonRoot: true
+          volumeMounts:
+            {{- range  $volume := .volumes }}
+            - name: {{ $volume.name }}
+              mountPath: {{ $volume.path }}
+            {{- end }}
+        - name: du-workload-stateful-{{ .Replica }}-logging
+          env:
+            - name: MESSAGE_LEN
+              value: {{(or (or .logging dict).message_len "240") | quote}}
+            - name: LOG_PERIOD_SEC
+              value: {{(or (or .logging dict).log_period_sec "1/5") | quote}}
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                    fieldPath: metadata.name
+          image: {{ .Image_logging }}
+          imagePullPolicy: IfNotPresent
+          livenessProbe: {{- if (or .logging dict).livenessProbe }} {{ .logging.livenessProbe | toJson }}
+            {{- else }}
+            exec:
+              command:
+              - ls
+            failureThreshold: 3
+            initialDelaySeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 10
+            {{end }}
+          resources:
+            limits:
+              cpu: {{or (or .logging dict).cpu_limit "63m"}}
+              memory: {{or (or .logging dict).memory_limit "200Mi"}}
+            requests:
+              cpu: {{or (or .logging dict).cpu_request "50m"}}
+              memory: {{or (or .logging dict).memory_request "150Mi"}}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - MKNOD
+              - all
+            privileged: false
+            readOnlyRootFilesystem: false
+            runAsNonRoot: true
+          volumeMounts:
+            {{- range  $volume := (or .logging dict).volumes }}
+            - name: {{ $volume.name }}
+              mountPath: {{ $volume.path }}
+            {{- end }}
+      {{- if .initContainer }}
+      initContainers:
+        - name: init
+          image: registry.redhat.io/ubi8/ubi
+          imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              cpu: {{or (or .initContainer dict).cpu_limit "120m"}}
+              memory: {{or (or .initContainer dict).memory_limit "125Mi"}}
+            requests:
+              cpu: {{or (or .initContainer dict).cpu_request "100m"}}
+              memory: {{or (or .initContainer dict).memory_request "100Mi"}}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - MKNOD
+              - all
+            privileged: false
+            readOnlyRootFilesystem: false
+            runAsNonRoot: true
+          {{- if (or .initContainer dict).volumes }}
+          volumeMounts:
+            {{- range  $volume := (or .initContainer dict).volumes }}
+            - name: {{ $volume.name }}
+              mountPath: {{ $volume.path }}
+            {{- end }}
+          {{- end }}
+      {{- end }}
+      volumes:
+        {{- range  $volume := .volumes }}
+        - name: {{ $volume.name }}
+          {{- if eq $volume.type "configMap" }}
+          configMap:
+            name: {{ $volume.name }}
+          {{- else if eq $volume.type "secret" }}
+          secret:
+            secretName: {{ $volume.name }}
+          {{- else if eq $volume.type "persistentVolumeClaim" }}
+          persistentVolumeClaim:
+            claimName: {{ $volume.name }}
+          {{- end }}
+        {{- end }}
+        {{- range  $volume := (or .initContainer dict).volumes }}
+        - name: {{ $volume.name }}
+          {{- if eq $volume.type "configMap" }}
+          configMap:
+            name: {{ $volume.name }}
+          {{- else if eq $volume.type "secret" }}
+          secret:
+            secretName: {{ $volume.name }}
+          {{- else if eq $volume.type "persistentVolumeClaim" }}
+          persistentVolumeClaim:
+            claimName: {{ $volume.name }}
+          {{- end }}
+        {{- end }}
+        {{- range  $volume := (or .logging dict).volumes }}
+        - name: {{ $volume.name }}
+          {{- if eq $volume.type "configMap" }}
+          configMap:
+            name: {{ $volume.name }}
+          {{- else if eq $volume.type "secret" }}
+          secret:
+            secretName: {{ $volume.name }}
+          {{- else if eq $volume.type "persistentVolumeClaim" }}
+          persistentVolumeClaim:
+            claimName: {{ $volume.name }}
+          {{- end }}
+        {{- end }}

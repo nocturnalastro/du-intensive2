@@ -5,7 +5,7 @@ jobs:
     qps: 4
     burst: 4
     namespacedIterations: false
-    namespace: workload
+    namespace: "workload"
     podWait: false
     cleanup: true
     waitWhenFinished: true
@@ -107,7 +107,7 @@ jobs:
               type: secret
               path: /var/secret4
 
-    # Templates of burstable pods with kubeapiserver reqs
+      # Templates of burstable pods with kubeapiserver reqs
       - objectTemplate: templates/kubectlapp/serviceaccount.yaml
         replicas: 6
       - objectTemplate: templates/kubectlapp/role.yaml
@@ -148,3 +148,34 @@ jobs:
           short_node_name: '{{ (split "." .NODE_NAME)._0 }}'
       - objectTemplate: templates/ptp-events-consumer/service.yaml
         replicas: 1
+
+
+      - objectTemplate: templates/common/pvc.yaml
+        replicas: 1
+        inputVars:
+          storage_class: {{ .STORAGE_CLASS }}
+
+      - objectTemplate: templates/stateful/statefulset.yaml
+        replicas: 1
+        inputVars:
+          Image_logging: '{{or .REGISTRY "quay.io/test_images"}}/logging:latest'
+          Image_ubi: '{{or .REGISTRY "registry.redhat.io/ubi8"}}/ubi'
+          volumes:
+            - name: pvc-1
+              type: persistentVolumeClaim
+              path: /var/vol
+
+      {{ if .NETWORKS }}
+      - objectTemplate: templates/sriov_dpdk/serviceaccount.yaml
+        replicas: 1
+      - objectTemplate: templates/sriov_dpdk/deployment.yaml
+        replicas: 1
+        inputVars:
+          Image_dpdk: '{{or .REGISTRY "registry.redhat.io/openshift4"}}/dpdk-base-rhel8:v4.8.0-8.1628601733'
+          volumes:
+            - name: pvc-1
+              type: persistentVolumeClaim
+              path: /var/vol
+          networks: {{ .NETWORKS | fromJson }}
+          scc_privileged: true
+      {{ end }}
