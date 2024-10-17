@@ -54,19 +54,21 @@ spec:
               cpu: {{(or .cpu_limit "16") | quote }}
               hugepages-1Gi: {{(or .hugepages_limit "16Gi") | quote }}
               memory: {{(or .mem_limit "32Gi") | quote }}
-              {{ .du_accelerator_model }}
               {{- range $net :=  .networks }}
-              {{ $net.resource }}: "1"
+              {{ (list ($net.resource | quote) ": " ("1" | quote)) | join ""}}
               {{- end }}
               {{ if .accelerator_model }}
-              {{ .accelerator_model | quote }}: "1"
+              {{ (list (.accelerator_model | quote) ": " ("1" | quote)) | join ""}}
               {{- end }}
             requests:
               cpu: {{ (or .cpu_limit "16") | quote }}
               hugepages-1Gi: {{(or .hugepages_limit "16Gi") | quote }}
               memory: {{(or .mem_limit "32Gi") | quote }}
               {{- range $net :=  .networks }}
-              {{ $net.resource }}: "1"
+              {{ (list ($net.resource | quote) ": " ("1" | quote)) | join ""}}
+              {{- end }}
+              {{ if .accelerator_model }}
+              {{ (list (.accelerator_model | quote) ": " ("1" | quote)) | join ""}}
               {{- end }}
           securityContext:
             privileged: true

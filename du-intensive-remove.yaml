@@ -75,3 +75,12 @@ jobs:
         labelSelector: {kube-burner-job: du-workload}
       - kind: PersistentVolume
         labelSelector: {kube-burner-job: du-workload}
+
+  - name: remove-namespace
+    qps: 2
+    burst: 2
+    jobType: delete
+    waitForDeletion: true
+    objects:
+      - kind: Namespace
+        labelSelector: {kube-burner-job: du-workload}
