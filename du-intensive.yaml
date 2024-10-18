@@ -146,7 +146,6 @@ jobs:
         inputVars:
           Image_ptp_consumer: '{{ or .REGISTRY "quay.io/jenchen" }}/ptp-event-consumer'
           short_node_name: '{{ (split "." .NODE_NAME)._0 }}'
-          NODE_NAME: "{{ .NODE_NAME }}"
       - objectTemplate: templates/ptp-events-consumer/service.yaml
         replicas: 1
 
