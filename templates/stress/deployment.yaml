@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stress-{{.Replica}}
+  labels:
+    group: load
+    svc: stress-{{.Replica}}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: stress-{{.Replica}}
+      redhat-best-practices-for-k8s.com/generic: target
+  template:
+    metadata:
+      labels:
+        group: load
+        name: stress-{{.Replica}}
+        redhat-best-practices-for-k8s.com/generic: target
+    spec:
+      runtimeClassName: performance-openshift-node-performance-profile
+      containers:
+        - image: "{{ .Image_stressng }}"
+          imagePullPolicy: IfNotPresent
+          name: stress-{{.Replica}}
+          # Request and Limits must be identical for the Pod to be assigned to the QoS Guarantee
+          resources:
+            requests:
+              cpu: {{(or .cpu_limit "10m") | quote }}
+              hugepages-1Gi: {{(or .hugepages_limit "1Gi") | quote }}
+              memory: {{(or .mem_limit "10M") | quote }}
+            limits:
+              cpu: {{(or .cpu_limit "10m") | quote }}
+              hugepages-1Gi: {{(or .hugepages_limit "1Gi") | quote }}
+              memory: {{(or .mem_limit "10M") | quote }}
+          env: {{ if .env }}{{ env | toJson}}
+            {{- else }}
+            - name: stress_cpu
+              value: {{(or .cpu_stresss "10m") | quote }}
+            - name: stress_vm
+              value: {{(or .vm_stress "1") | quote }}
+            - name: stress_vm-bytes
+              value: {{(or .vm_stress_bytes "10M") | quote }}
+            {{- end }}
+          volumeMounts:
+            {{- range  $volume := .volumes }}
+            - name: {{ $volume.name }}
+              mountPath: {{ $volume.path }}
+            {{- end }}
+            - name: hugepage
+              mountPath: /hugepages
+      dnsPolicy: Default
+      terminationGracePeriodSeconds: 1
+      volumes:
+        {{- range  $volume := .volumes }}
+        - name: {{ $volume.name }}
+          {{- if eq $volume.type "configMap" }}
+          configMap:
+            name: {{ $volume.name }}
+          {{- else if eq $volume.type "secret" }}
+          secret:
+            secretName: {{ $volume.name }}
+          {{- else if eq $volume.type "persistentVolumeClaim" }}
+          persistentVolumeClaim:
+            claimName: {{ $volume.name }}
+          {{- else if eq $volume.type "emptyDir" }}
+          emptyDir: {}
+          {{- else if eq $volume.type "emptyDirWithConfig" }}
+          emptyDir: {{ $volume.emptyDirConfig | toJson }}
+          {{- end }}
+        {{- end }}
+        - name: hugepage
+          emptyDir:
+            medium: HugePages
