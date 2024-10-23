@@ -24,21 +24,21 @@ spec:
           # Request and Limits must be identical for the Pod to be assigned to the QoS Guarantee
           resources:
             requests:
-              cpu: {{(or .cpu_limit "10m") | quote }}
+              cpu: {{(or .cpu_limit "50m") | quote }}
               hugepages-1Gi: {{(or .hugepages_limit "1Gi") | quote }}
-              memory: {{(or .mem_limit "10M") | quote }}
+              memory: {{(or .mem_limit "150Mi") | quote }}
             limits:
-              cpu: {{(or .cpu_limit "10m") | quote }}
+              cpu: {{(or .cpu_limit "50m") | quote }}
               hugepages-1Gi: {{(or .hugepages_limit "1Gi") | quote }}
-              memory: {{(or .mem_limit "10M") | quote }}
+              memory: {{(or .mem_limit "150Mi") | quote }}
           env: {{ if .env }}{{ env | toJson}}
             {{- else }}
             - name: stress_cpu
-              value: {{(or .cpu_stresss "10m") | quote }}
+              value: {{(or .cpu_stress "2") | quote }}
             - name: stress_vm
               value: {{(or .vm_stress "1") | quote }}
             - name: stress_vm-bytes
-              value: {{(or .vm_stress_bytes "10M") | quote }}
+              value: {{(or .vm_stress_bytes "50M") | quote }}
             {{- end }}
           volumeMounts:
             {{- range  $volume := .volumes }}

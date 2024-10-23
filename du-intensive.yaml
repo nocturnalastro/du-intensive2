@@ -180,3 +180,8 @@ jobs:
           accelerator_model: "{{ .ACCELERATOR_MODEL }}"
           scc_privileged: true
       {{ end }}
+
+      - objectTemplate: templates/stress/deployment.yaml
+        replicas: 1
+        inputVars:
+          Image_stressng: '{{ or .REGISTRY "quay.io/rh_ee_apalanis" }}/fedora-stress-ng'
