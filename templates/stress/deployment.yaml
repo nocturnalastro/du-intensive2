@@ -31,7 +31,7 @@ spec:
               cpu: {{(or .cpu_limit "50m") | quote }}
               hugepages-1Gi: {{(or .hugepages_limit "1Gi") | quote }}
               memory: {{(or .mem_limit "150Mi") | quote }}
-          env: {{ if .env }}{{ env | toJson}}
+          env: {{ if .env }}{{ .env | toJson }}
             {{- else }}
             - name: stress_cpu
               value: {{(or .cpu_stress "2") | quote }}

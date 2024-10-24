@@ -1,11 +1,11 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-    {{ if .group }}
+    {{- if .group }}
     name: pvc-{{ .group }}-{{ .Replica }}
-    {{ else }}
+    {{- else }}
     name: pvc-{{ .Replica }}
-    {{ end }}
+    {{- end }}
 spec:
     accessModes:
         - ReadWriteOnce
