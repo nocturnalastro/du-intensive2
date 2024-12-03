@@ -2,11 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: du-workload-{{.Replica}}
-  annotations:
-    # Disable CPU balance with CRIO
-    irq-load-balancing.crio.io: "disable"
-    cpu-load-balancing.crio.io: "disable"
-    cpu-quota.crio.io: "disable"
   labels:
     group: load
     svc: du-workload-{{.Replica}}
@@ -22,6 +17,11 @@ spec:
         group: load
         name: du-workload-{{.Replica}}
         redhat-best-practices-for-k8s.com/generic: target
+      annotations:
+        # Disable CPU balance with CRIO
+        irq-load-balancing.crio.io: "disable"
+        cpu-load-balancing.crio.io: "disable"
+        cpu-quota.crio.io: "disable"
     spec:
       runtimeClassName: performance-openshift-node-performance-profile
       containers:
