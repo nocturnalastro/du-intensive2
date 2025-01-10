@@ -1,0 +1,216 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: stateful-{{ .Replica }}
+  labels:
+    app: du-workload-stateful
+spec:
+  replicas: {{ .num_of_replicas | default 1 | int }}
+  serviceName: du-workload-stateful-{{ .Replica }}
+  selector:
+    matchLabels:
+      app: du-workload-stateful-{{ .Replica }}
+  template:
+    metadata:
+      labels:
+        app: du-workload-stateful-{{ .Replica }}
+    spec:
+      runtimeClassName: {{ .performanceProfile | default "performance-openshift-node-performance-profile" }}
+      containers:
+        - name: du-workload-stateful-{{ .Replica }}-stress
+          env: {{- if .env }}{{ .env | toJson }}
+          {{- else }}
+            - name: stress_cpu
+              value: {{ (.cpu_stress | default "2") | quote }}
+            - name: stress_vm
+              value: {{ (.vm_stress | default "1") | quote }}
+            - name: stress_vm-bytes
+              value: {{ (.vm_stress_bytes | default "50M") | quote }}
+          {{- end }}
+          image: {{ .Image_stressng | quote }}
+          {{- if .cmd | default false }}
+          command: {{ .cmd | toJson }}
+          {{- end }}
+          imagePullPolicy: IfNotPresent
+          livenessProbe: {{- if .livenessProbe }}{{ .livenessProbe | toJson }}
+          {{- else }}
+            exec:
+              command:
+              - ls
+            failureThreshold: 3
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 15
+          {{- end }}
+          readinessProbe: {{- if .readinessProbe }}{{ .readinessProbe | toJson }}
+          {{- else }}
+            exec:
+              command:
+              - ls
+            failureThreshold: 3
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 15
+          {{- end }}
+          resources:
+            {{- $cpu_limit := .cpu_limit | default "157m" }}
+            {{- $mem_limit := .mem_limit | default "300Mi" }}
+            requests:
+              cpu: {{ (.cpu_request | default $cpu_limit) | quote }}
+              memory: {{ (.mem_request | default $mem_limit) | quote }}
+              {{- if .hugepages_request | default .hugepages_limit }}
+              hugepages-1Gi: {{ .hugepages_request | default .hugepages_limit | quote }}
+              {{- end }}
+              {{- if (.ephemeral_storage_request | default .ephemeral_storage_limit) }}
+              ephemeral-storage: {{ (.ephemeral_storage_request | default .ephemeral_storage_limit) | quote }}
+              {{- end }}
+            limits:
+              cpu: {{ $cpu_limit | quote }}
+              memory: {{ $mem_limit | quote }}
+              {{- if .hugepages_limit }}
+              hugepages-1Gi: {{ .hugepages_limit | quote }}
+              {{- end }}
+              {{- if .ephemeral_storage_limit }}
+              ephemeral-storage: {{ .ephemeral_storage_limit | quote }}
+              {{- end }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - MKNOD
+                - all
+            privileged: false
+            readOnlyRootFilesystem: false
+            runAsNonRoot: true
+          volumeMounts:
+            {{- range  $volume := .volumes }}
+            - name: {{ $volume.name | default $volume.value }}
+              mountPath: {{ $volume.path }}
+            {{- end }}
+        - name: du-workload-stateful-{{ .Replica }}-logging
+          env:
+            {{- $logging := .logging | default dict}}
+            - name: MESSAGE_LEN
+              value: {{ $logging.message_len | default "240" | quote}}
+            - name: LOG_PERIOD_SEC
+              value: {{ $logging.log_period_sec | default "1/5" | quote}}
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                    fieldPath: metadata.name
+          image: {{ .Image_logging | quote}}
+          imagePullPolicy: IfNotPresent
+          livenessProbe: {{- if $logging.livenessProbe }} {{ .logging.livenessProbe | toJson }}
+            {{- else }}
+            exec:
+              command:
+              - ls
+            failureThreshold: 3
+            initialDelaySeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 10
+            {{- end }}
+          resources:
+            limits:
+              cpu: {{ $logging.cpu_limit | default "63m" }}
+              memory: {{ $logging.memory_limit | default "200Mi" }}
+            requests:
+              cpu: {{ $logging.cpu_request | default "50m" }}
+              memory: {{ $logging.memory_request | default "150Mi" }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - MKNOD
+              - all
+            privileged: false
+            readOnlyRootFilesystem: false
+            runAsNonRoot: true
+          volumeMounts:
+            {{- range $volume := $logging.volumes }}
+            - name: {{ $volume.name }}
+              mountPath: {{ $volume.path }}
+            {{- end }}
+      {{ $init := .initContainer | default dict }}
+      {{- if .initContainer }}
+      initContainers:
+        - name: init
+          image: registry.redhat.io/ubi8/ubi
+          imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              cpu: {{ $init.cpu_limit | default "120m" }}
+              memory: {{ $init.memory_limit | default "125Mi" }}
+            requests:
+              cpu: {{ $init.cpu_request | default "100m" }}
+              memory: {{ $init.memory_request | default "100Mi" }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - MKNOD
+              - all
+            privileged: false
+            readOnlyRootFilesystem: false
+            runAsNonRoot: true
+          {{- if $init.volumes }}
+          volumeMounts:
+            {{- range $volume := $init.volumes }}
+            - name: {{ $volume.name | default $volume.value }}
+              mountPath: {{ $volume.path }}
+            {{- end }}
+          {{- end }}
+      {{- end }}
+      volumes:
+        {{- range $volume := .volumes }}
+        - name: {{ $volume.name | default $volume.value }}
+          {{- if eq $volume.type "configMap" }}
+          configMap:
+            name: {{ $volume.value }}
+          {{- else if eq $volume.type "secret" }}
+          secret:
+            secretName: {{ $volume.value }}
+          {{- else if eq $volume.type "persistentVolumeClaim" }}
+          persistentVolumeClaim:
+            claimName: {{ $volume.value }}
+          {{- else if eq $volume.type "emptyDir" }}
+          emptyDir: {{ $volume.emptyDirConfig | default dict | toJson }}
+          {{- end }}
+        {{- end }}
+        {{- range $volume := $init.volumes }}
+        - name: {{ $volume.name | default $volume.value }}
+          {{- if eq $volume.type "configMap" }}
+          configMap:
+            name: {{ $volume.value }}
+          {{- else if eq $volume.type "secret" }}
+          secret:
+            secretName: {{ $volume.value }}
+          {{- else if eq $volume.type "persistentVolumeClaim" }}
+          persistentVolumeClaim:
+            claimName: {{ $volume.value }}
+          {{- else if eq $volume.type "emptyDir" }}
+          emptyDir: {{ $volume.emptyDirConfig | default dict | toJson }}
+          {{- end }}
+        {{- end }}
+        {{- range $volume := $logging.volumes }}
+        - name: {{ $volume.name | default $volume.value }}
+          {{- if eq $volume.type "configMap" }}
+          configMap:
+            name: {{ $volume.value }}
+          {{- else if eq $volume.type "secret" }}
+          secret:
+            secretName: {{ $volume.value }}
+          {{- else if eq $volume.type "persistentVolumeClaim" }}
+          persistentVolumeClaim:
+            claimName: {{ $volume.value }}
+          {{- else if eq $volume.type "emptyDir" }}
+          emptyDir: {{ $volume.emptyDirConfig | default dict | toJson }}
+          {{- else if eq $volume.type "hostpath" }}
+          hostPath:
+            path: {{ $volume.path }}
+            type: ""
+          {{- end }}
+        {{- end }}

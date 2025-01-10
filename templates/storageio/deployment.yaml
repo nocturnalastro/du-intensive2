@@ -43,7 +43,7 @@ spec:
               value: "1"
           volumeMounts:
             {{ range  $volume := .volumes }}
-            - name: {{ $volume.name }}
+            - name: {{ $volume.name | default $volume.value }}
               mountPath: {{ $volume.path }}
             {{ end }}
             - name: hugepage
@@ -81,16 +81,16 @@ spec:
       terminationGracePeriodSeconds: 1
       volumes:
         {{ range  $volume := .volumes }}
-        - name: {{ $volume.name }}
+        - name: {{ $volume.name | default $volume.value }}
           {{ if eq $volume.type "configMap" }}
           configMap:
-            name: {{ $volume.name }}
+            name: {{ $volume.value }}
           {{ else if eq $volume.type "secret" }}
           secret:
-            secretName: {{ $volume.name }}
+            secretName: {{ $volume.value }}
           {{ else if eq $volume.type "persistentVolumeClaim" }}
           persistentVolumeClaim:
-            claimName: {{ $volume.name }}
+            claimName: {{ $volume.value }}
           {{ end }}
         {{ end }}
         - name: hugepage
@@ -98,4 +98,8 @@ spec:
             medium: HugePages
         - name: stress-storage
           persistentVolumeClaim:
-            claimName: storage-io-pvc-{{.Replica}}
+            {{- if .group }}
+            claimName: pvc-{{ .group }}-{{ .Replica }}
+            {{- else }}
+            claimName: pvc-{{ .Replica }}
+            {{- end }}

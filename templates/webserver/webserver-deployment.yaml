@@ -1,34 +1,51 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: webserver-{{.Replica}}
+  name: webserver-{{ .Replica }}
 spec:
   template:
     metadata:
       labels:
-        name: webserver-{{.Replica}}
+        name: webserver-{{ .Replica }}
         redhat-best-practices-for-k8s.com/generic: target
     spec:
       nodeSelector:
         node-role.kubernetes.io/worker: ""
       containers:
         - name: webserver
-          image: "{{ .Image_nginx }}"
+          image: {{ .Image_nginx | quote }}
           resources:
+            {{- $cpu_limit := .cpu_limit | default "100m" }}
+            {{- $mem_limit := .mem_limit | default "128Mi" }}
             requests:
-              cpu: 100m
-              memory: 128Mi
+              cpu: {{ .cpu_request | default $cpu_limit | quote }}
+              memory: {{ .mem_request | default $mem_limit | quote }}
+              {{- if .hugepages_request | default .hugepages_limit }}
+              hugepages-1Gi: {{ .hugepages_request | default .hugepages_limit | quote }}
+              {{- end }}
+              {{- if .ephemeral_storage_request | default .ephemeral_storage_limit }}
+              ephemeral-storage: {{ .ephemeral_storage_request | default .ephemeral_storage_limit | quote }}
+              {{- end }}
+            limits:
+              cpu: {{ $cpu_limit | quote }}
+              memory: {{ $mem_limit | quote }}
+              {{- if .hugepages_limit }}
+              hugepages-1Gi: {{ .hugepages_limit | quote }}
+              {{- end }}
+              {{- if .ephemeral_storage_limit }}
+              ephemeral-storage: {{ .ephemeral_storage_limit | quote }}
+              {{- end }}
           ports:
           - containerPort: 8080
             protocol: TCP
           imagePullPolicy: IfNotPresent
           volumeMounts:
-            {{ range  $volume := .volumes }}
-            - name: {{ $volume.name }}
-              mountPath: {{ $volume.path }}
-            {{ end }}
+            {{- range $volume := .volumes | default list }}
+            - name: {{ $volume.name | default $volume.value }}
+              mountPath: {{ $volume.path | quote }}
+            {{- end }}
         - name: stressng
-          image: "{{ .Image_stressng }}"
+          image: {{ .Image_stressng | quote }}
           imagePullPolicy: IfNotPresent
           resources:
             requests:
@@ -36,26 +53,32 @@ spec:
               memory: 128Mi
           env:
             - name: stress_cpu
-              value: "1"
+              value: {{ .cpu_stress | default 1 | quote }}
       restartPolicy: Always
       volumes:
-        {{ range  $volume := .volumes }}
-        - name: {{ $volume.name }}
-          {{ if eq $volume.type "configMap" }}
+        {{- range $volume := .volumes }}
+        - name: {{ $volume.name | default $volume.value }}
+          {{- if eq $volume.type "configMap" }}
           configMap:
-            name: {{ $volume.name }}
-          {{ else if eq $volume.type "secret" }}
+            name: {{ $volume.value }}
+          {{- else if eq $volume.type "secret" }}
           secret:
-            secretName: {{ $volume.name }}
-          {{ else if eq $volume.type "persistentVolumeClaim" }}
+            secretName: {{ $volume.value }}
+          {{- else if eq $volume.type "persistentVolumeClaim" }}
           persistentVolumeClaim:
-            claimName: {{ $volume.name }}
-          {{ end }}
-        {{ end }}
-  replicas: 1
+            claimName: {{ $volume.value }}
+          {{- else if eq $volume.type "emptyDir" }}
+          emptyDir: {{ $volume.emptyDirConfig | default dict | toJson }}
+          {{- else if eq $volume.type "hostpath" }}
+          hostPath:
+            path: {{ $volume.path }}
+            type: ""
+          {{- end }}
+        {{- end }}
+  replicas: {{ .num_of_replicas | default 1 | int }}
   selector:
     matchLabels:
-      name: webserver-{{.Replica}}
+      name: webserver-{{ .Replica }}
       redhat-best-practices-for-k8s.com/generic: target
   strategy:
     type: RollingUpdate

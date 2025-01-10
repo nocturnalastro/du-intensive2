@@ -5,7 +5,7 @@ metadata:
   labels:
     app: du-ptp-event-consumer
 spec:
-  replicas: 1
+  replicas: {{ .num_of_replicas | default 1 | int }}
   selector:
     matchLabels:
       app: du-ptp-event-consumer
@@ -19,28 +19,28 @@ spec:
       serviceAccountName: ptp-event-consumer-sa
       containers:
       - name: ptp-consumer
-        image: {{ .Image_ptp_consumer }}
+        image: {{ .Image_ptp_consumer | quote }}
         args:
           - "--local-api-addr=127.0.0.1:27017"
           - "--api-path=/api/ocloudNotifications/v1/"
           - "--api-addr=127.0.0.1:27017"
         env:
         - name: NODE_NAME
-          {{ if .short_node_name }}
-          value: "{{ .short_node_name }}"
-          {{ else }}
+          {{- if .short_node_name }}
+          value: {{ .short_node_name | quote }}
+          {{- else }}
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
-          {{ end }}
+          {{- end }}
         - name: NODE_NAME_FULL
-          {{ if .short_node_name }}
-          value: "{{ .short_node_name }}"
-          {{ else }}
+          {{- if .short_node_name }}
+          value: {{ .short_node_name | quote }}
+          {{- else }}
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
-          {{ end }}
+          {{- end }}
         - name: NAME_SPACE
           valueFrom:
             fieldRef:
