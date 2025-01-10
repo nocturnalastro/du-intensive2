@@ -1,0 +1,106 @@
+{{- $networks := list }}
+{{- range $net := (.networks | default list) }}
+{{- $networks = append $networks $net.network }}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stress-{{.Replica}}
+  labels:
+    group: load
+    svc: stress-{{.Replica}}
+spec:
+  replicas: {{ .num_of_replicas | default 1 | int }}
+  selector:
+    matchLabels:
+      name: stress-{{.Replica}}
+  template:
+    metadata:
+      labels:
+        group: load
+        name: stress-{{.Replica}}
+      {{- if gt ((.networks | default list) | len) 0 }}
+      annotations:
+        k8s.v1.cni.cncf.io/networks: {{ $networks | toJson | quote}}
+      {{- end }}
+    spec:
+      runtimeClassName: {{ .performanceProfile | default "performance-openshift-node-performance-profile" }}
+      containers:
+        - image: {{ .Image_stressng | quote }}
+          imagePullPolicy: IfNotPresent
+          name: stress-{{ .Replica }}
+          # Request and Limits must be identical for the Pod to be assigned to the QoS Guarantee
+          resources:
+            {{- $cpu_limit := .cpu_limit | default "50m" }}
+            {{- $mem_limit := .mem_limit | default "150Mi" }}
+            requests:
+              cpu: {{ (.cpu_request | default $cpu_limit) | quote }}
+              memory: {{ (.mem_request | default $mem_limit) | quote }}
+              {{- if .hugepages_request | default .hugepages_limit }}
+              hugepages-1Gi: {{ .hugepages_request | default .hugepages_limit | quote }}
+              {{- end }}
+              {{- if (.ephemeral_storage_request | default .ephemeral_storage_limit) }}
+              ephemeral-storage: {{ (.ephemeral_storage_request | default .ephemeral_storage_limit) | quote }}
+              {{- end }}
+              {{- range $net := .networks }}
+              {{ print ($net.resource | quote) ": '1'" }}
+              {{- end }}
+            limits:
+              cpu: {{ $cpu_limit | quote }}
+              memory: {{ $mem_limit | quote }}
+              {{- if .hugepages_limit }}
+              hugepages-1Gi: {{ .hugepages_limit | quote }}
+              {{- end }}
+              {{- if .ephemeral_storage_limit }}
+              ephemeral-storage: {{ .ephemeral_storage_limit | quote }}
+              {{- end }}
+              {{- range $net := .networks }}
+              {{ print ($net.resource | quote) ": '1'" }}
+              {{- end }}
+          env: {{- if .env }}{{ .env | toJson }}
+            {{- else }}
+            - name: stress_cpu
+              value: {{ (.cpu_stress | default "2") | quote }}
+            - name: stress_vm
+              value: {{ (.vm_stress | default "1") | quote }}
+            - name: stress_vm-bytes
+              value: {{ (.vm_stress_bytes | default "50M") | quote }}
+            {{- end }}
+          volumeMounts:
+            {{- range $volume := (.volumes | default list) }}
+            - name: {{ $volume.name | default $volume.value }}
+              mountPath: {{ $volume.path }}
+            {{- end }}
+            {{- if .hugepages_limit }}
+            - name: hugepage
+              mountPath: /hugepages
+            {{- end }}
+      dnsPolicy: Default
+      terminationGracePeriodSeconds: 1
+      {{- if or (gt (.volumes | default list | len) 0) .hugepages_limit }}
+      volumes:
+        {{- range $volume := .volumes }}
+        - name: {{ $volume.name | default $volume.value }}
+          {{- if eq $volume.type "configMap" }}
+          configMap:
+            name: {{ $volume.value }}
+          {{- else if eq $volume.type "secret" }}
+          secret:
+            secretName: {{ $volume.value }}
+          {{- else if eq $volume.type "persistentVolumeClaim" }}
+          persistentVolumeClaim:
+            claimName: {{ $volume.value }}
+          {{- else if eq $volume.type "emptyDir" }}
+          emptyDir: {{ $volume.emptyDirConfig | default dict | toJson }}
+          {{- else if eq $volume.type "hostpath" }}
+          hostPath:
+            path: {{ $volume.path }}
+            type: ""
+          {{- end }}
+        {{- end }}
+        {{- if .hugepages_limit }}
+        - name: hugepage
+          emptyDir:
+            medium: HugePages
+        {{- end }}
+        {{- end }}

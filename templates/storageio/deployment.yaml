@@ -98,4 +98,8 @@ spec:
             medium: HugePages
         - name: stress-storage
           persistentVolumeClaim:
-            claimName: storage-io-pvc-{{.Replica}}
+            {{- if .group }}
+            claimName: pvc-{{ .group }}-{{ .Replica }}
+            {{- else }}
+            claimName: pvc-{{ .Replica }}
+            {{- end }}

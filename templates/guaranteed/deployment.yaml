@@ -4,18 +4,18 @@ metadata:
   name: du-workload-{{.Replica}}
   labels:
     group: load
-    svc: du-workload-{{.Replica}}
+    svc: du-workload-{{ .Replica }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      name: du-workload-{{.Replica}}
+      name: du-workload-{{ .Replica }}
       redhat-best-practices-for-k8s.com/generic: target
   template:
     metadata:
       labels:
         group: load
-        name: du-workload-{{.Replica}}
+        name: du-workload-{{ .Replica }}
         redhat-best-practices-for-k8s.com/generic: target
       annotations:
         # Disable CPU balance with CRIO
@@ -23,11 +23,11 @@ spec:
         cpu-load-balancing.crio.io: "disable"
         cpu-quota.crio.io: "disable"
     spec:
-      runtimeClassName: performance-openshift-node-performance-profile
+      runtimeClassName: {{ .performanceProfile | default "performance-openshift-node-performance-profile" }}
       containers:
-        - image: "{{ .Image_stressng }}"
+        - image: {{ .Image_stressng | quote}}
           imagePullPolicy: IfNotPresent
-          name: du-workload-{{.Replica}}
+          name: du-workload-{{ .Replica }}
           # Request and Limits must be identical for the Pod to be assigned to the QoS Guarantee
           resources:
             requests:
@@ -46,14 +46,14 @@ spec:
             - name: stress_vm-bytes
               value: "512M"
           volumeMounts:
-            {{ range  $volume := .volumes }}
-            - name: {{ $volume.name }}
+            {{- range  $volume := .volumes }}
+            - name: {{ $volume.name | default $volume.value }}
               mountPath: {{ $volume.path }}
-            {{ end }}
+            {{- end }}
             - name: hugepage
               mountPath: /hugepages
         - name: nginx
-          image: "{{ .Image_nginx }}"
+          image: {{ .Image_nginx | quote }}
           resources:
             requests:
               cpu: 1
@@ -84,19 +84,25 @@ spec:
       dnsPolicy: Default
       terminationGracePeriodSeconds: 1
       volumes:
-        {{ range  $volume := .volumes }}
-        - name: {{ $volume.name }}
-          {{ if eq $volume.type "configMap" }}
+        {{- range $volume := .volumes }}
+        - name: {{ $volume.name | default $volume.value }}
+          {{- if eq $volume.type "configMap" }}
           configMap:
-            name: {{ $volume.name }}
-          {{ else if eq $volume.type "secret" }}
+            name: {{ $volume.value }}
+          {{- else if eq $volume.type "secret" }}
           secret:
-            secretName: {{ $volume.name }}
-          {{ else if eq $volume.type "persistentVolumeClaim" }}
+            secretName: {{ $volume.value }}
+          {{- else if eq $volume.type "persistentVolumeClaim" }}
           persistentVolumeClaim:
-            claimName: {{ $volume.name }}
-          {{ end }}
-        {{ end }}
+            claimName: {{ $volume.value }}
+          {{- else if eq $volume.type "emptyDir" }}
+          emptyDir: {{ $volume.emptyDirConfig | default dict | toJson }}
+          {{- else if eq $volume.type "hostpath" }}
+          hostPath:
+            path: {{ $volume.path }}
+            type: ""
+          {{- end }}
+        {{- end }}
         - name: hugepage
           emptyDir:
             medium: HugePages

@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  {{- if .group }}
+  name: pv-{{ .group }}-{{ .Replica }}
+  {{- else }}
+  name: pv-{{ .Replica }}
+  {{- end }}
+spec:
+  capacity:
+    storage: {{ .size | default "1Gi" }}
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Delete
+  storageClassName: {{ .storage_class | default "general" }}
+  hostPath:
+    path: "/mnt/data"

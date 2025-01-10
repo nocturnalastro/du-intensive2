@@ -5,7 +5,7 @@ jobs:
     qps: 4
     burst: 4
     namespacedIterations: false
-    namespace: workload
+    namespace: "workload"
     podWait: false
     cleanup: true
     waitWhenFinished: true
@@ -15,6 +15,8 @@ jobs:
     objects:
     # Templates
       # Template of Gu Pods with fedora-stress-ng
+      - objectTemplate: templates/guaranteed/service.yaml
+        replicas: 1
       - objectTemplate: templates/common/configmap.yaml
         replicas: 2
         inputVars:
@@ -47,9 +49,6 @@ jobs:
             - name: secret-guaranteed-4
               type: secret
               path: /var/secret4
-
-      - objectTemplate: templates/guaranteed/service.yaml
-        replicas: 1
 
       - objectTemplate: templates/common/configmap.yaml
         replicas: 2
@@ -139,6 +138,8 @@ jobs:
             - name: secret-4
               type: secret
               path: /var/secret4
+
+      {{- if .ENABLE_PTP }}
       # Template with ptp events consumer
       - objectTemplate: templates/ptp-events-consumer/service-account.yaml
         replicas: 1
@@ -149,13 +150,55 @@ jobs:
           short_node_name: '{{ (split "." .NODE_NAME)._0 }}'
       - objectTemplate: templates/ptp-events-consumer/service.yaml
         replicas: 1
+      {{- end }}
+
       # Template with storage stress on PVC claims
-      - objectTemplate: templates/storageio/pv.yaml
+      - objectTemplate: templates/common/pv.yaml
         replicas: 1
-      - objectTemplate: templates/storageio/pvc.yaml
+        inputVars:
+          storage_class: standard
+          size: 1Gi
+          group: storageio
+      - objectTemplate: templates/common/pvc.yaml
         replicas: 1
+        inputVars:
+          storage_class: standard
+          size: 1Gi
+          group: storageio
       - objectTemplate: templates/storageio/deployment.yaml
         replicas: 1
         inputVars:
-          Image_stressng: "{{ .REGISTRY }}/fedora-stress-ng"
-          Image_nginx: "{{ .REGISTRY }}/sampleapp"
+          Image_stressng: '{{ or .REGISTRY "quay.io/rh_ee_apalanis" }}/fedora-stress-ng'
+          Image_nginx: '{{ or .REGISTRY "quay.io/rh_ee_apalanis" }}/sampleapp'
+          group: storageio
+
+
+      - objectTemplate: templates/common/pvc.yaml
+        replicas: 1
+        inputVars:
+          storage_class: {{ .STORAGE_CLASS }}
+      - objectTemplate: templates/stateful/statefulset.yaml
+        replicas: 1
+        inputVars:
+          Image_logging: '{{or .REGISTRY "quay.io/test_images"}}/logging:latest'
+          Image_stressng: '{{ or .REGISTRY "quay.io/rh_ee_apalanis" }}/fedora-stress-ng'
+          volumes:
+            - name: pvc-1
+              type: persistentVolumeClaim
+              path: /var/vol
+
+      {{- if .NETWORKS  }}
+      - objectTemplate: templates/sriov_dpdk/serviceaccount.yaml
+        replicas: 1
+      - objectTemplate: templates/sriov_dpdk/deployment.yaml
+        replicas: 1
+        inputVars:
+          Image_dpdk: '{{or .REGISTRY "registry.redhat.io/openshift4"}}/dpdk-base-rhel8:v4.8.0-8.1628601733'
+          volumes:
+            - name: pvc-1
+              type: persistentVolumeClaim
+              path: /var/vol
+          networks: {{ .NETWORKS }}
+          accelerator_model: {{ .ACCELERATOR_MODEL }}
+          scc_privileged: true
+      {{- end }}
