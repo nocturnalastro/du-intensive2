@@ -13,11 +13,8 @@ jobs:
     errorOnVerify: true
     defaultMissingKeysWithZero: true
     objects:
-<<<<<<< HEAD
-    # Template of Gu Pods with fedora-stress-ng
-=======
+    # Templates
       # Template of Gu Pods with fedora-stress-ng
->>>>>>> ebbc2f3 (initial commits)
       - objectTemplate: templates/common/configmap.yaml
         replicas: 2
         inputVars:
@@ -142,7 +139,7 @@ jobs:
             - name: secret-4
               type: secret
               path: /var/secret4
-
+      # Template with ptp events consumer
       - objectTemplate: templates/ptp-events-consumer/service-account.yaml
         replicas: 1
       - objectTemplate: templates/ptp-events-consumer/deployment.yaml
@@ -152,7 +149,7 @@ jobs:
           short_node_name: '{{ (split "." .NODE_NAME)._0 }}'
       - objectTemplate: templates/ptp-events-consumer/service.yaml
         replicas: 1
-      # Storage stress with PVC claims
+      # Template with storage stress on PVC claims
       - objectTemplate: templates/storageio/pv.yaml
         replicas: 1
       - objectTemplate: templates/storageio/pvc.yaml
