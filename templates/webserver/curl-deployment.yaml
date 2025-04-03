@@ -64,7 +64,7 @@ spec:
                 - "/bin/sh"
                 - "-c"
                 - "curl ${WEBSERVER_HOSTNAME}:${WEBSERVER_PORT}"
-            periodSeconds: 15
+            periodSeconds: {{ .poll_interval | default 15 }}
             timeoutSeconds: 5
             failureThreshold: 3
         - name: nginx
