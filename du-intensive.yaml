@@ -1,4 +1,7 @@
 ---
+global:
+  functionTemplates:
+    - templates/common/volumes.tpl
 jobs:
   - name: du-workload
     jobIterations: 1

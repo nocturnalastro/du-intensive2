@@ -95,26 +95,7 @@ spec:
             initialDelaySeconds: 15
             periodSeconds: 60
       restartPolicy: Always
-      volumes:
-        {{- range $volume := .volumes }}
-        - name: {{ $volume.name | default $volume.value }}
-          {{- if eq $volume.type "configMap" }}
-          configMap:
-            name: {{ $volume.value }}
-          {{- else if eq $volume.type "secret" }}
-          secret:
-            secretName: {{ $volume.value }}
-          {{- else if eq $volume.type "persistentVolumeClaim" }}
-          persistentVolumeClaim:
-            claimName: {{ $volume.value }}
-          {{- else if eq $volume.type "emptyDir" }}
-          emptyDir: {{ $volume.emptyDirConfig | default dict | toJson }}
-          {{- else if eq $volume.type "hostpath" }}
-          hostPath:
-            path: {{ $volume.path }}
-            type: ""
-          {{- end }}
-        {{- end }}
+      volumes: {{- template "volumes_func" (list .volumes 8) }}
   replicas: {{ .num_of_replicas | default 1 | int }}
   selector:
     matchLabels:
