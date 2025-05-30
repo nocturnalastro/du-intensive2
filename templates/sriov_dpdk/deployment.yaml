@@ -1,0 +1,148 @@
+{{- $networks := list}}
+{{- range $net := .networks }}
+{{- $networks = append $networks $net.network }}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dpdk-deployment-{{ .Replica }}
+  labels:
+    app: dpdk-deployment-{{ .Replica }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dpdk-deployment-{{ .Replica }}
+  template:
+    metadata:
+      labels:
+        app: dpdk-deployment-{{ .Replica }}
+      annotations:
+        {{- if .scc_privileged }}
+        openshift.io/required-scc: privileged
+        {{- end }}
+        cpu-load-balancing.crio.io: disable
+        cpu-quota.crio.io: disable
+        irq-load-balancing.crio.io: disable
+        k8s.v1.cni.cncf.io/networks: {{ $networks | toJson | quote }}
+    spec:
+      shareProcessNamespace: true
+      serviceAccountName: sriovdpdksa
+      runtimeClassName: {{ .performanceProfile | default "performance-openshift-node-performance-profile" }}
+      containers:
+        - image: {{ .Image_dpdk }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              ALWD_CPUS=`cat /proc/self/status | grep 'Cpus_allowed_list' | sed 's/Cpus_allowed_list://' | awk -F"," '{print $1}'`
+              tail -f /dev/null | dpdk-testpmd --iova-mode=va -- --portmask=0x1 --nb-cores=2 --forward-mode=mac --port-topology=loop --auto-start --stats-period 1 2>&1 &
+              sleep infinity
+          imagePullPolicy: {{ .imagePullPolicy | default "Always" }}
+          livenessProbe:
+            exec:
+              command:
+                - ls
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 7
+          name: dpdk-1
+          resources:
+            {{- $cpu_limit := .cpu_limit | default "16" }}
+            {{- $mem_limit := .mem_limit | default "32Gi" }}
+            {{- $hugepages_limit := .hugepages_limit | default | default "16Gi" }}
+            requests:
+              cpu: {{ (.cpu_request | default $cpu_limit) | quote }}
+              memory: {{ (.mem_request | default $mem_limit) | quote }}
+              hugepages-1Gi: {{ .hugepages_request | default $hugepages_limit | quote }}
+              {{- if (.ephemeral_storage_request | default .ephemeral_storage_limit) }}
+              ephemeral-storage: {{ (.ephemeral_storage_request | default .ephemeral_storage_limit) | quote }}
+              {{- end }}
+              {{- range $net := .networks }}
+              {{ print ($net.resource | quote) ": '1'" }}
+              {{- end }}
+              {{- if .accelerator_model }}
+              {{ print (.accelerator_model | quote) ": '1'" }}
+              {{- end }}
+            limits:
+              cpu: {{ $cpu_limit | quote }}
+              memory: {{ $mem_limit | quote }}
+              hugepages-1Gi: {{ $hugepages_limit | quote }}
+              {{- if .ephemeral_storage_limit }}
+              ephemeral-storage: {{ .ephemeral_storage_limit | quote }}
+              {{- end }}
+              {{- range $net :=.networks }}
+              {{ print ($net.resource | quote) ": '1'" }}
+              {{- end }}
+              {{- if .accelerator_model }}
+              {{ print (.accelerator_model | quote) ": '1'" }}
+              {{- end }}
+          securityContext:
+            privileged: true
+            capabilities:
+              add:
+                - IPC_LOCK
+                - NET_ADMIN
+                - NET_BIND_SERVICE
+                - SYS_NICE
+                - NET_RAW
+              drop:
+                - ALL
+            runAsUser: 0
+          volumeMounts:
+            - mountPath: /dev/hugepages
+              name: hugepage
+            {{- range $volume := .volumes }}
+            - name: {{ $volume.name | default $volume.value }}
+              mountPath: {{ $volume.path }}
+            {{- end }}
+          env:
+            - name: TZ
+              value: UTC
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: POD_UID
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.uid
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+      volumes:
+        - emptyDir: {}
+          name: shared-sockets
+        - emptyDir:
+            medium: HugePages
+          name: hugepage
+        {{- range $volume := .volumes }}
+        - name: {{ $volume.name | default $volume.value }}
+          {{- if eq $volume.type "configMap" }}
+          configMap:
+            name: {{ $volume.value }}
+          {{- else if eq $volume.type "secret" }}
+          secret:
+            secretName: {{ $volume.value }}
+          {{- else if eq $volume.type "persistentVolumeClaim" }}
+          persistentVolumeClaim:
+            claimName: {{ $volume.value }}
+          {{- else if eq $volume.type "emptyDir" }}
+          emptyDir: {{ $volume.emptyDirConfig | default dict | toJson }}
+          {{- else if eq $volume.type "hostpath" }}
+          hostPath:
+            path: {{ $volume.path }}
+            type: ""
+          {{- end }}
+        {{- end }}

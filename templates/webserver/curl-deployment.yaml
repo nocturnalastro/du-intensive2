@@ -1,34 +1,51 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: curl-{{.Replica}}
+  name: curl-{{ .Replica }}
 spec:
   template:
     metadata:
       labels:
-        name: curl-{{.Replica}}
+        name: curl-{{ .Replica }}
         redhat-best-practices-for-k8s.com/generic: target
     spec:
       nodeSelector:
         node-role.kubernetes.io/worker: ""
       containers:
         - name: curlapp
-          image: "{{ .Image_curl }}"
+          image: {{ .Image_curl | quote }}
           command: ["sleep", "inf"]
           resources:
+            {{- $cpu_limit := .cpu_limit | default "100m" }}
+            {{- $mem_limit := .mem_limit | default "128Mi" }}
             requests:
-              cpu: 100m
-              memory: 128Mi
+              cpu: {{ (.cpu_request | default $cpu_limit) | quote }}
+              memory: {{ (.mem_request | default $mem_limit) | quote }}
+              {{- if .hugepages_request | default .hugepages_limit }}
+              hugepages-1Gi: {{ .hugepages_request | default .hugepages_limit | quote }}
+              {{- end }}
+              {{- if (.ephemeral_storage_request | default .ephemeral_storage_limit) }}
+              ephemeral-storage: {{ (.ephemeral_storage_request | default .ephemeral_storage_limit) | quote }}
+              {{- end }}
+            limits:
+              cpu: {{ $cpu_limit | quote }}
+              memory: {{ $mem_limit | quote }}
+              {{- if .hugepages_limit }}
+              hugepages-1Gi: {{ .hugepages_limit | quote }}
+              {{- end }}
+              {{- if .ephemeral_storage_limit }}
+              ephemeral-storage: {{ .ephemeral_storage_limit | quote }}
+              {{- end }}
           env:
             - name: WEBSERVER_HOSTNAME
-              value: webserver-{{.Replica}}
+              value: webserver-{{ .Replica }}
             - name: WEBSERVER_PORT
               value: "8080"
           volumeMounts:
-            {{ range  $volume := .volumes }}
-            - name: {{ $volume.name }}
+            {{- range $volume := .volumes | default list }}
+            - name: {{ $volume.name | default $volume.value }}
               mountPath: {{ $volume.path }}
-            {{ end }}
+            {{- end }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: false
@@ -47,15 +64,33 @@ spec:
                 - "/bin/sh"
                 - "-c"
                 - "curl ${WEBSERVER_HOSTNAME}:${WEBSERVER_PORT}"
-            periodSeconds: 15
+            periodSeconds: {{ .poll_interval | default 15 }}
             timeoutSeconds: 5
             failureThreshold: 3
         - name: nginx
-          image: "{{ .Image_nginx }}"
+          image: {{ .Image_nginx | quote }}
           resources:
+            {{- $nginx := .nginx | default dict }}
+            {{- $cpu_limit := $nginx.cpu_limit | default "100m" }}
+            {{- $mem_limit := $nginx.mem_limit | default "128Mi" }}
             requests:
-              cpu: 100m
-              memory: 128Mi
+              cpu: {{ $nginx.cpu_request | default $cpu_limit | quote }}
+              memory: {{ $nginx.mem_request | default $mem_limit | quote }}
+              {{- if $nginx.hugepages_request | default $nginx.hugepages_limit }}
+              hugepages-1Gi: {{ $nginx.hugepages_request | default $nginx.hugepages_limit | quote }}
+              {{- end }}
+              {{- if $nginx.ephemeral_storage_request | default $nginx.ephemeral_storage_limit }}
+              ephemeral-storage: {{ $nginx.ephemeral_storage_request | default $nginx.ephemeral_storage_limit | quote }}
+              {{- end }}
+            limits:
+              cpu: {{ $cpu_limit | quote }}
+              memory: {{ $mem_limit | quote }}
+              {{- if $nginx.hugepages_limit }}
+              hugepages-1Gi: {{ $nginx.hugepages_limit | quote }}
+              {{- end }}
+              {{- if $nginx.ephemeral_storage_limit }}
+              ephemeral-storage: {{ $nginx.ephemeral_storage_limit | quote }}
+              {{- end }}
           ports:
             - containerPort: 8080
           startupProbe:
@@ -78,23 +113,29 @@ spec:
             periodSeconds: 60
       restartPolicy: Always
       volumes:
-        {{ range  $volume := .volumes }}
-        - name: {{ $volume.name }}
-          {{ if eq $volume.type "configMap" }}
+        {{- range $volume := .volumes }}
+        - name: {{ $volume.name | default $volume.value }}
+          {{- if eq $volume.type "configMap" }}
           configMap:
-            name: {{ $volume.name }}
-          {{ else if eq $volume.type "secret" }}
+            name: {{ $volume.value }}
+          {{- else if eq $volume.type "secret" }}
           secret:
-            secretName: {{ $volume.name }}
-          {{ else if eq $volume.type "persistentVolumeClaim" }}
+            secretName: {{ $volume.value }}
+          {{- else if eq $volume.type "persistentVolumeClaim" }}
           persistentVolumeClaim:
-            claimName: {{ $volume.name }}
-          {{ end }}
-        {{ end }}
-  replicas: 1
+            claimName: {{ $volume.value }}
+          {{- else if eq $volume.type "emptyDir" }}
+          emptyDir: {{ $volume.emptyDirConfig | default dict | toJson }}
+          {{- else if eq $volume.type "hostpath" }}
+          hostPath:
+            path: {{ $volume.path }}
+            type: ""
+          {{- end }}
+        {{- end }}
+  replicas: {{ .num_of_replicas | default 1 | int }}
   selector:
     matchLabels:
-      name: curl-{{.Replica}}
+      name: curl-{{ .Replica }}
       redhat-best-practices-for-k8s.com/generic: target
   strategy:
     type: RollingUpdate
