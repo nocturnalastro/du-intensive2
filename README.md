@@ -17,6 +17,10 @@ This repository holds templates for a RAN DU workload deployed with [kube-burner
 * Traffic on primary CNI due to workload expected around 350 KB per sec
 * kube api-server incremental load due to workload expected to increase by 5-8%
 
+#### Minimum pre-requisites
+* Single Node Openshift Cluster with Performance Profile
+* kube-burner v1.16.0+
+
 #### Steps to run workload on a RAN DU profile Single Node Openshift Cluster
 
 * Clone this repository and run the following.
