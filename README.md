@@ -1,6 +1,6 @@
 # Generic RAN DU Workload
 
-This repository holds templates for a RAN DU workload deployed with [kube-burner](https://github.com/kube-burner/kube-burner)
+A scalable, fully customizable RAN DU workload deployed with [kube-burner](https://github.com/kube-burner/kube-burner)
 
 | Pod | Number of Pods | Specs | Stress |
 |-----|----------------|-------| ------- |
