@@ -2,6 +2,7 @@
 
 A scalable, fully customizable RAN DU workload deployed with [kube-burner](https://github.com/kube-burner/kube-burner)
 
+#### Default Configuration
 | Pod | Number of Pods | Specs | Stress |
 |-----|----------------|-------| ------- |
 | Guaranteed | 1 pod, 2 containers | - 32 CPU, 1 GiB Memory, 16 GiB HP<br>- 2 configmaps and 4 secrets<br> 1 svc<br> | 32 threads of 100% CPU stress, 512M virtual memory stress |
