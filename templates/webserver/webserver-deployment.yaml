@@ -22,6 +22,11 @@ spec:
       containers:
         - name: webserver
           image: {{ .Image_nginx | quote }}
+          {{ if .nBytes }}
+          env:
+            - name: NBYTES
+              value: {{ .nBytes | quote }}
+          {{- end }}
           resources:
             {{- $cpu_limit := .cpu_limit | default "200m" }}
             {{- $mem_limit := .mem_limit | default "1025Mi" }}

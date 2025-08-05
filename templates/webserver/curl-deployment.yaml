@@ -58,18 +58,28 @@ spec:
               {{- end }}
           env:
             - name: WEBSERVER_HOSTNAME
-              value: webserver-{{ .Replica }}
+              {{- if .webserver_suffix }}
+              value: webserver-{{ $suffix }}.{{ .webserver_suffix }}
+              {{- else }}
+              value: webserver-{{ $suffix }}
+              {{- end }}
             - name: WEBSERVER_PORT
               value: "8080"
-          volumeMounts:
-            {{- range $volume := .volumes | default list }}
-            - name: {{ $volume.name | default $volume.value }}
-              mountPath: {{ $volume.path }}
+            {{ if .webserver_path }}
+            - name: WEBSERVER_PATH
+              value: {{ .webserver_path | quote }}
+            {{- end}}
+            {{- if (.no_exec | default false) }}
+            - name: INTERVAL
+              value: 2s
+            - name: TIMEOUT
+              value: "1"
             {{- end }}
           volumeMounts: {{- template "parts_volume_mounts" (dict "volumes" .volumes "indent" 12) }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: false
+          {{- if not (.no_exec | default false) }}
           startupProbe:
             exec:
               command:
@@ -88,6 +98,7 @@ spec:
             periodSeconds: {{ .poll_interval | default 15 }}
             timeoutSeconds: 5
             failureThreshold: 3
+          {{- end }}
         - name: nginx
           image: {{ .Image_nginx | quote }}
           resources:
