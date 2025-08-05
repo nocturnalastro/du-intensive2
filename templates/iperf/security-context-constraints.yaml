@@ -1,0 +1,19 @@
+---
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: iperf-scc
+allowHostNetwork: true
+allowPrivilegedContainer: false
+allowedCapabilities:
+  - NET_ADMIN
+  - NET_RAW
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+volumes:
+  - secret
+  - configMap
+users:
+  - system:serviceaccount:{{ .sa_namespace }}:iperf-sa

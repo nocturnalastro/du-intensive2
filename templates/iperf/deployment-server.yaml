@@ -1,0 +1,107 @@
+{{ $Replica := "1"}}
+{{ if ne (index . "Replica") nil }}
+{{ $Replica = .Replica }} {{/* Replica isn't set if replica set to 1  // TODO raise bug in kube-burner */}}
+{{- end }}
+{{ $suffix := $Replica }}
+{{- if .group }}
+{{- $suffix = print .group "-" $Replica }}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: iperf-{{ $suffix }}
+  labels:
+    group: load
+    svc: iperf-{{ $suffix }}
+spec:
+  replicas: {{ .num_of_replicas | default 1 | int }}
+  selector:
+    matchLabels:
+      name: iperf-{{ $suffix }}
+  template:
+    metadata:
+      labels:
+        group: load
+        name: iperf-{{ $suffix }}
+      annotations:
+        {{- template "parts_network_defs" (dict "networks" .networks "indent" 8) }}
+    spec:
+      serviceAccountName: iperf-sa
+      runtimeClassName: {{ .performanceProfile | default "performance-openshift-node-performance-profile" }}
+      containers:
+        - name: iperf
+          image: {{ .Image_iperf | quote }}
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+
+              nft list table inet filter >/dev/null 2>&1 || nft add table inet filter
+              nft list chain inet filter input >/dev/null 2>&1 || nft add chain inet filter input '{ type filter hook input priority -100; }'
+
+              nft add rule inet filter input iifname net1 ip saddr "{{ .subnet }}" log prefix "nft_accept " group 1 counter
+              nft add rule inet filter input iifname net1 ip saddr != "{{ .subnet }}"  log prefix "nft_dropped " group 3 counter drop
+              nft add rule inet filter input tcp dport 5201 ct state new log prefix "iperf_connection " group 2 counter
+
+              set +e
+              ./monitor.sh server {{ .serverIP }}
+          securityContext:
+            runAsUser: 0
+            capabilities:
+              add:
+                - "NET_ADMIN"
+                - "NET_RAW"
+            privileged: false
+          imagePullPolicy: IfNotPresent
+          # Request and Limits must be identical for the Pod to be assigned to the QoS Guarantee
+          resources:
+            {{- $cpu_limit := .cpu_limit | default "2" }}
+            {{- $mem_limit := .mem_limit | default "500Mi" }}
+            requests:
+              cpu: {{ (.cpu_request | default $cpu_limit) | quote }}
+              memory: {{ (.mem_request | default $mem_limit) | quote }}
+              {{- if .hugepages_request | default .hugepages_limit }}
+              hugepages-1Gi: {{ .hugepages_request | default .hugepages_limit | quote }}
+              {{- end }}
+              {{- if (.ephemeral_storage_request | default .ephemeral_storage_limit) }}
+              ephemeral-storage: {{ (.ephemeral_storage_request | default .ephemeral_storage_limit) | quote }}
+              {{- end }}
+              {{- template "parts_network_resources" (dict "networks" .networks "indent" 14) }}
+            limits:
+              cpu: {{ $cpu_limit | quote }}
+              memory: {{ $mem_limit | quote }}
+              {{- if .hugepages_limit }}
+              hugepages-1Gi: {{ .hugepages_limit | quote }}
+              {{- end }}
+              {{- if .ephemeral_storage_limit }}
+              ephemeral-storage: {{ .ephemeral_storage_limit | quote }}
+              {{- end }}
+              {{- template "parts_network_resources" (dict "networks" .networks "indent" 14) }}
+          {{- if .env }}
+          env: {{ .env | toJson }}
+          {{- end }}
+          {{- if or (gt ((append (.volumes | default list) (.extra_volumes | default list)) | len) 0) .hugepages_limit }}
+          volumeMounts: {{- template "parts_volume_mounts" (dict "volumes" .volumes "indent" 12) }}
+            {{- if .hugepages_limit }}
+            - name: hugepage
+              mountPath: /hugepages
+            {{- end }}
+          {{- end }}
+        {{- template "parts_extra_containers" (dict "N_extra_containers" (.N_extra_containers | default 0) "Image_ubi" (.Image_ubi | default "") "Replica" $suffix "extra_volumes" .extra_volumes "indent" 8 ) }}
+      dnsPolicy: Default
+      terminationGracePeriodSeconds: 1
+      {{- if or (gt ((append (.volumes | default list) (.extra_volumes | default list)) | len) 0) .hugepages_limit }}
+      volumes:
+        {{- if or (gt (.volumes | default list| len) 0) .hugepages_limit }}
+        {{- template "parts_volume_defs" (dict "volumes" .volumes "indent" 8) }}
+        {{- end }}
+        {{- range $i, $e := (.extra_volumes | default list) }}
+        {{- template "parts_volume_defs" (dict "volumes" $e "indent" 8) }}
+        {{- end }}
+        {{- if .hugepages_limit }}
+        - name: hugepage
+          emptyDir:
+            medium: HugePages
+        {{- end }}
+      {{- end }}
