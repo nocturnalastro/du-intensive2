@@ -55,6 +55,7 @@ spec:
         volumeMounts:
           - name: pubsubstore
             mountPath: /store
+      {{- template "parts_extra_containers" (dict "N_extra_containers" (.N_extra_containers | default 0) "Image_ubi" (.Image_ubi | default "") "Replica" $suffix "extra_volumes" .extra_volumes "indent" 8 ) }}
       volumes:
         - name: pubsubstore
           emptyDir: {}

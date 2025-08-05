@@ -1,7 +1,15 @@
+{{ $Replica := "1"}}
+{{ if ne (index . "Replica") nil }}
+{{ $Replica = .Replica }} {{/* Replica isn't set if replica set to 1  // TODO raise bug in kube-burner */}}
+{{- end }}
+{{ $suffix := $Replica }}
+{{- if .group }}
+{{- $suffix = print .group "-" $Replica }}
+{{- end }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: pod-reader-{{ .Replica }}
+  name: pod-reader-{{ $suffix }}
   # namespace: workload
 rules:
 - apiGroups: [""]

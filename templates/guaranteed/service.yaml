@@ -1,10 +1,18 @@
+{{ $Replica := "1"}}
+{{ if ne (index . "Replica") nil }}
+{{ $Replica = .Replica }} {{/* Replica isn't set if replica set to 1  // TODO raise bug in kube-burner */}}
+{{- end }}
+{{ $suffix := $Replica }}
+{{- if .group }}
+{{- $suffix = print .group "-" $Replica }}
+{{- end }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: service-{{ .Replica }}
+  name: service-{{ $suffix }}
 spec:
   selector:
-    name: du-workload-{{ .Replica }}
+    name: du-workload-{{ $suffix }}
   ports:
     - port: 80
       targetPort: 80

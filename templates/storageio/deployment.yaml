@@ -1,7 +1,15 @@
+{{ $Replica := "1"}}
+{{ if ne (index . "Replica") nil }}
+{{ $Replica = .Replica }} {{/* Replica isn't set if replica set to 1  // TODO raise bug in kube-burner */}}
+{{- end }}
+{{ $suffix := $Replica }}
+{{- if .group }}
+{{- $suffix = print .group "-" $Replica }}
+{{- end }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: storage-io-{{.Replica}}
+  name: storage-io-{{ $suffix }}
   annotations:
     # Disable CPU balance with CRIO
     irq-load-balancing.crio.io: "disable"
@@ -9,43 +17,40 @@ metadata:
     cpu-quota.crio.io: "disable"
   labels:
     group: load
-    svc: storage-io-{{.Replica}}
+    svc: storage-io-{{ $suffix }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      name: storage-io-{{.Replica}}
+      name: storage-io-{{ $suffix }}
       redhat-best-practices-for-k8s.com/generic: target
   template:
     metadata:
       labels:
         group: load
-        name: storage-io-{{.Replica}}
+        name: storage-io-{{ $suffix }}
         redhat-best-practices-for-k8s.com/generic: target
     spec:
       runtimeClassName: performance-openshift-node-performance-profile
       containers:
         - image: "{{ .Image_stressng }}"
           imagePullPolicy: IfNotPresent
-          name: storage-io-{{.Replica}}
+          name: storage-io-{{ $suffix }}
           # Request and Limits must be identical for the Pod to be assigned to the QoS Guarantee
           resources:
             requests:
               cpu: 1
               memory: 1024M
-              hugepages-1Gi: 16Gi
+              hugepages-1Gi: {{ .hugepages_1G | default "16Gi" }}
             limits:
               cpu: 1
               memory: 1024M
-              hugepages-1Gi: 16Gi
+              hugepages-1Gi: {{ .hugepages_1G | default "16Gi" }}
           env:
             - name: stress_hdd
               value: "1"
           volumeMounts:
-            {{ range  $volume := .volumes }}
-            - name: {{ $volume.name | default $volume.value }}
-              mountPath: {{ $volume.path }}
-            {{ end }}
+            {{ template "parts_volume_mounts" (dict "volumes" .volumes "indent" 12) }}
             - name: hugepage
               mountPath: /hugepages
         - name: nginx
@@ -77,29 +82,14 @@ spec:
               port: 8080
             initialDelaySeconds: 15
             periodSeconds: 60
+        {{- template "parts_extra_containers" (dict "N_extra_containers" (.N_extra_containers | default 0) "Image_ubi" (.Image_ubi | default "") "Replica" $suffix "extra_volumes" .extra_volumes "indent" 8) }}
       dnsPolicy: Default
       terminationGracePeriodSeconds: 1
       volumes:
-        {{ range  $volume := .volumes }}
-        - name: {{ $volume.name | default $volume.value }}
-          {{ if eq $volume.type "configMap" }}
-          configMap:
-            name: {{ $volume.value }}
-          {{ else if eq $volume.type "secret" }}
-          secret:
-            secretName: {{ $volume.value }}
-          {{ else if eq $volume.type "persistentVolumeClaim" }}
-          persistentVolumeClaim:
-            claimName: {{ $volume.value }}
-          {{ end }}
-        {{ end }}
+        {{- template "parts_volume_defs" (dict "volumes" .volumes "indent" 8) }}
         - name: hugepage
           emptyDir:
             medium: HugePages
         - name: stress-storage
           persistentVolumeClaim:
-            {{- if .group }}
-            claimName: pvc-{{ .group }}-{{ .Replica }}
-            {{- else }}
-            claimName: pvc-{{ .Replica }}
-            {{- end }}
+            claimName: pvc-{{ $suffix }}

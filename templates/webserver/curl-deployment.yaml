@@ -1,12 +1,28 @@
+
+{{ $Replica := "1"}}
+{{ if ne (index . "Replica") nil }}
+{{ $Replica = .Replica }} {{/* Replica isn't set if replica set to 1  // TODO raise bug in kube-burner */}}
+{{- end }}
+{{ $suffix := $Replica }}
+{{- if .group }}
+{{- $suffix = print .group "-" $Replica }}
+{{- end }}
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: curl-{{ .Replica }}
+  name: curl-{{ $suffix }}
 spec:
+  replicas: {{ .num_of_replicas | default 1 | int }}
+  selector:
+    matchLabels:
+      name: curl-{{ $suffix }}
+      redhat-best-practices-for-k8s.com/generic: target
+  strategy:
+    type: RollingUpdate
   template:
     metadata:
       labels:
-        name: curl-{{ .Replica }}
+        name: curl-{{ $suffix }}
         redhat-best-practices-for-k8s.com/generic: target
     spec:
       nodeSelector:
@@ -14,13 +30,17 @@ spec:
       containers:
         - name: curlapp
           image: {{ .Image_curl | quote }}
+          {{- if not (.no_exec | default false) }}
           command: ["sleep", "inf"]
+          {{- end }}
           resources:
             {{- $cpu_limit := .cpu_limit | default "100m" }}
             {{- $mem_limit := .mem_limit | default "128Mi" }}
+            {{- $cpu_request := .cpu_request | default "80m" }}
+            {{- $mem_request := .mem_request | default "100Mi" }}
             requests:
-              cpu: {{ (.cpu_request | default $cpu_limit) | quote }}
-              memory: {{ (.mem_request | default $mem_limit) | quote }}
+              cpu: {{ (.cpu_request | default $cpu_request) | quote }}
+              memory: {{ (.mem_request | default $mem_request) | quote }}
               {{- if .hugepages_request | default .hugepages_limit }}
               hugepages-1Gi: {{ .hugepages_request | default .hugepages_limit | quote }}
               {{- end }}
@@ -46,6 +66,7 @@ spec:
             - name: {{ $volume.name | default $volume.value }}
               mountPath: {{ $volume.path }}
             {{- end }}
+          volumeMounts: {{- template "parts_volume_mounts" (dict "volumes" .volumes "indent" 12) }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: false
@@ -111,31 +132,6 @@ spec:
               port: 8080
             initialDelaySeconds: 15
             periodSeconds: 60
+        {{- template "parts_extra_containers" (dict "N_extra_containers" (.N_extra_containers | default 0) "Image_ubi" (.Image_ubi | default "") "Replica" $suffix "extra_volumes" .extra_volumes "indent" 8) }}
       restartPolicy: Always
-      volumes:
-        {{- range $volume := .volumes }}
-        - name: {{ $volume.name | default $volume.value }}
-          {{- if eq $volume.type "configMap" }}
-          configMap:
-            name: {{ $volume.value }}
-          {{- else if eq $volume.type "secret" }}
-          secret:
-            secretName: {{ $volume.value }}
-          {{- else if eq $volume.type "persistentVolumeClaim" }}
-          persistentVolumeClaim:
-            claimName: {{ $volume.value }}
-          {{- else if eq $volume.type "emptyDir" }}
-          emptyDir: {{ $volume.emptyDirConfig | default dict | toJson }}
-          {{- else if eq $volume.type "hostpath" }}
-          hostPath:
-            path: {{ $volume.path }}
-            type: ""
-          {{- end }}
-        {{- end }}
-  replicas: {{ .num_of_replicas | default 1 | int }}
-  selector:
-    matchLabels:
-      name: curl-{{ .Replica }}
-      redhat-best-practices-for-k8s.com/generic: target
-  strategy:
-    type: RollingUpdate
+      volumes: {{- template "parts_volume_defs" (dict "volumes" .volumes "indent" 8) }}
