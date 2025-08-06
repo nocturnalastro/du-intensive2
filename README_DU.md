@@ -2,7 +2,8 @@
 
 A scalable, fully customizable RAN DU workload deployed with [kube-burner](https://github.com/kube-burner/kube-burner)
 
-#### Default Configuration
+## Default DU Configuration
+
 | Pod | Number of Pods | Specs | Stress |
 |-----|----------------|-------| ------- |
 | Guaranteed | 1 pod, 2 containers | - 32 CPU, 1 GiB Memory, 16 GiB HP<br>- 2 configmaps and 4 secrets<br> 1 svc<br> | 32 threads of 100% CPU stress, 512M virtual memory stress |
@@ -18,11 +19,12 @@ A scalable, fully customizable RAN DU workload deployed with [kube-burner](https
 * Traffic on primary CNI due to workload expected around 350 KB per sec
 * kube api-server incremental load due to workload expected to increase by 5-8%
 
-#### Minimum pre-requisites
+## Minimum pre-requisites
+
 * Single Node Openshift Cluster with Performance Profile
 * kube-burner v1.16.0+
 
-#### Steps to run workload on a RAN DU profile Single Node Openshift Cluster
+## Steps to run workload on a RAN DU profile Single Node Openshift Cluster
 
 * Clone this repository and run the following.
 
@@ -32,23 +34,23 @@ A scalable, fully customizable RAN DU workload deployed with [kube-burner](https
     export ACCELERATOR_MODEL="" # Used by DPDK deployment if left blank it wont be added
     export REGISTRY="" # For a disconnected cluster, path to mirrored images in internal hub registry
     export NODE_NAME=$(oc get nodes -ojson | jq .items[0].metadata.name -r) # For SNO with performance profile
-    export ENABLE_PTP="" # Set to true if node is ptp-enabled 
+    export ENABLE_PTP="" # Set to true if node is ptp-enabled
     export KUBECONFIG="..."
     kube-burner init --config du-intensive.yaml
     ```
 
-#### Steps to run workload with cpu_utilization tests (internal jenkins pipelines)
+## Steps to run workload with cpu_utilization tests (internal jenkins pipelines)
 
 * Run the MIRROR_SPOKE_OPERATOR_IMAGES stage in ocp-far-edge-vran-deployment pipeline to mirror necessary test images
 * Run the cpu_util test using ocp-far-edge-vran-tests pipeline
 
 ## Additional Workload Features
 
-### Enabling PTP Consumer
+## Enabling PTP Consumer
 
 A PTP consumer can be run on systems with PTP available by setting an env var `ENABLE_PTP` and requires `NODE_NAME`.
 
-### Running DPDK deployment
+## Running DPDK deployment
 
 Running the DPDK pod requires the defintion of the a `NETWORKS` env var. `$NETWORKS` should be a list of objects of the following form:
 

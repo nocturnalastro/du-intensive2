@@ -1,4 +1,9 @@
 ---
+global:
+  functionTemplates:
+    - templates/parts/volumes.tpl
+    - templates/parts/networks.tpl
+    - templates/parts/extra_containers.tpl
 jobs:
   - name: du-workload
     jobIterations: 1
@@ -15,8 +20,6 @@ jobs:
     objects:
     # Templates
       # Template of Gu Pods with fedora-stress-ng
-      - objectTemplate: templates/guaranteed/service.yaml
-        replicas: 1
       - objectTemplate: templates/common/configmap.yaml
         replicas: 2
         inputVars:
@@ -28,8 +31,13 @@ jobs:
       - objectTemplate: templates/guaranteed/deployment.yaml
         replicas: 1
         inputVars:
-          Image_stressng: '{{ or .REGISTRY "quay.io/rh_ee_apalanis" }}/fedora-stress-ng'
-          Image_nginx: '{{ or .REGISTRY "quay.io/rh_ee_apalanis" }}/sampleapp'
+          {{- if eq (index $ "REGISTRY") nil }}
+          Image_stressng: 'quay.io/rh_ee_apalanis/fedora-stress-ng'
+          Image_nginx: 'quay.io/rh_ee_apalanis/sampleapp'
+          {{- else }}
+          Image_stressng: '{{ .REGISTRY }}/fedora-stress-ng'
+          Image_nginx: '{{ .REGISTRY }}/sampleapp'
+          {{- end }}
           volumes:
             - value: configmap-guaranteed-1
               type: configMap
@@ -50,17 +58,25 @@ jobs:
               type: secret
               path: /var/secret4
 
+      - objectTemplate: templates/guaranteed/service.yaml
+        replicas: 1
+
       - objectTemplate: templates/common/configmap.yaml
         replicas: 2
       - objectTemplate: templates/common/secret.yaml
         replicas: 4
 
-      # # Template of burstable pods with exec probes
+      # Template of burstable pods with exec probes
       - objectTemplate: templates/webserver/webserver-deployment.yaml
         replicas: 4
         inputVars:
-          Image_stressng: '{{ or .REGISTRY "quay.io/rh_ee_apalanis" }}/fedora-stress-ng'
-          Image_nginx: '{{ or .REGISTRY "quay.io/rh_ee_apalanis" }}/sampleapp'
+          {{- if eq (index $ "REGISTRY") nil }}
+          Image_stressng: 'quay.io/rh_ee_apalanis/fedora-stress-ng'
+          Image_nginx: 'quay.io/rh_ee_apalanis/sampleapp'
+          {{- else }}
+          Image_stressng: '{{ .REGISTRY }}/fedora-stress-ng'
+          Image_nginx: '{{ .REGISTRY }}/sampleapp'
+          {{- end }}
           volumes:
             - value: configmap-1
               type: configMap
@@ -85,8 +101,13 @@ jobs:
       - objectTemplate: templates/webserver/curl-deployment.yaml
         replicas: 4
         inputVars:
-          Image_nginx: '{{ or .REGISTRY "quay.io/rh_ee_apalanis" }}/sampleapp'
-          Image_curl: '{{ or .REGISTRY "quay.io/rh_ee_apalanis" }}/curl'
+          {{- if eq (index $ "REGISTRY") nil }}
+          Image_nginx: 'quay.io/rh_ee_apalanis/sampleapp'
+          Image_curl: 'quay.io/rh_ee_apalanis/curl'
+          {{- else }}
+          Image_nginx: '{{ .REGISTRY }}/sampleapp'
+          Image_curl: '{{ .REGISTRY }}/curl'
+          {{- end }}
           volumes:
             - value: configmap-1
               type: configMap
@@ -117,8 +138,13 @@ jobs:
       - objectTemplate: templates/kubectlapp/deployment.yaml
         replicas: 6
         inputVars:
-          Image_nginx: '{{ or .REGISTRY "quay.io/rh_ee_apalanis" }}/sampleapp'
-          Image_kubectl: '{{ or .REGISTRY "quay.io/rh_ee_apalanis" }}/kubectl'
+          {{- if eq (index $ "REGISTRY") nil }}
+          Image_nginx: 'quay.io/rh_ee_apalanis/sampleapp'
+          Image_kubectl: 'quay.io/rh_ee_apalanis/kubectl'
+          {{- else }}
+          Image_nginx: '{{ .REGISTRY }}/sampleapp'
+          Image_kubectl: '{{ .REGISTRY }}/kubectl'
+          {{- end }}
           volumes:
             - value: configmap-1
               type: configMap
@@ -139,19 +165,6 @@ jobs:
               type: secret
               path: /var/secret4
 
-      {{- if .ENABLE_PTP }}
-      # Template with ptp events consumer
-      - objectTemplate: templates/ptp-events-consumer/service-account.yaml
-        replicas: 1
-      - objectTemplate: templates/ptp-events-consumer/deployment.yaml
-        replicas: 1
-        inputVars:
-          Image_ptp_consumer: '{{ or .REGISTRY "quay.io/jenchen" }}/ptp-event-consumer'
-          short_node_name: '{{ (split "." .NODE_NAME)._0 }}'
-      - objectTemplate: templates/ptp-events-consumer/service.yaml
-        replicas: 1
-      {{- end }}
-
       # Template with storage stress on PVC claims
       - objectTemplate: templates/common/pv.yaml
         replicas: 1
@@ -168,37 +181,11 @@ jobs:
       - objectTemplate: templates/storageio/deployment.yaml
         replicas: 1
         inputVars:
-          Image_stressng: '{{ or .REGISTRY "quay.io/rh_ee_apalanis" }}/fedora-stress-ng'
-          Image_nginx: '{{ or .REGISTRY "quay.io/rh_ee_apalanis" }}/sampleapp'
           group: storageio
-
-
-      - objectTemplate: templates/common/pvc.yaml
-        replicas: 1
-        inputVars:
-          storage_class: {{ .STORAGE_CLASS }}
-      - objectTemplate: templates/stateful/statefulset.yaml
-        replicas: 1
-        inputVars:
-          Image_logging: '{{or .REGISTRY "quay.io/test_images"}}/logging:latest'
-          Image_stressng: '{{ or .REGISTRY "quay.io/rh_ee_apalanis" }}/fedora-stress-ng'
-          volumes:
-            - value: pvc-1
-              type: persistentVolumeClaim
-              path: /var/vol
-
-      {{- if .NETWORKS  }}
-      - objectTemplate: templates/sriov_dpdk/serviceaccount.yaml
-        replicas: 1
-      - objectTemplate: templates/sriov_dpdk/deployment.yaml
-        replicas: 1
-        inputVars:
-          Image_dpdk: '{{or .REGISTRY "registry.redhat.io/openshift4"}}/dpdk-base-rhel8:v4.8.0-8.1628601733'
-          volumes:
-            - value: pvc-1
-              type: persistentVolumeClaim
-              path: /var/vol
-          networks: {{ .NETWORKS }}
-          accelerator_model: {{ .ACCELERATOR_MODEL }}
-          scc_privileged: true
-      {{- end }}
+          {{- if eq (index $ "REGISTRY") nil }}
+          Image_stressng: 'quay.io/rh_ee_apalanis/fedora-stress-ng'
+          Image_nginx: 'quay.io/rh_ee_apalanis/sampleapp'
+          {{- else }}
+          Image_stressng: '{{ .REGISTRY }}/fedora-stress-ng'
+          Image_nginx: '{{ .REGISTRY }}/sampleapp'
+          {{- end }}

@@ -1,0 +1,37 @@
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  labels:
+    {{- $role := "master" }}
+    {{- if index . role }}
+    {{- $role = .role }}
+    {{- end }}
+    machineconfiguration.openshift.io/role: {{ $role | quote }}
+  # The "99-" prefix ensures it's applied after default configurations.
+  name: 99-master-load-nftables-modules
+spec:
+  config:
+    ignition:
+      version: 3.2.0
+    storage:
+      files:
+        # This section defines the file to be created on the nodes.
+        - path: /etc/modules-load.d/nftables-modules.conf
+          filesystem: root
+          mode: 0644
+          contents:
+            # The Base64 encoded string below contains the list of modules,
+            # each on a new line.
+            #
+            # Decoded content:
+            # nf_tables
+            # nf_conntrack
+            # nft_ct
+            # nft_limit
+            # nft_log
+            # nft_nat
+            # nft_chain_nat
+            # nf_reject_ipv4
+            # nf_reject_ipv6
+            # nfnetlink_log
+            source: data:text/plain;charset=utf-8;base64,bmZfdGFibGVzCm5mX2Nvbm50cmFjawpuZnRfY3QKbmZ0X2xpbWl0Cm5mdF9sb2cKbmZ0X25hdApuZnRfY2hhaW5fbmF0Cm5mX3JlamVjdF9pcHY0Cm5mX3JlamVjdF9pcHY2Cm5mbmV0bGlua19sb2c=

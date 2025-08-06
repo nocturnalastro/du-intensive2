@@ -1,0 +1,101 @@
+---
+jobs:
+{{/* 5 namespaces */}}
+{{ range $i := until 5 }}
+  - name: du-workload-{{ $i }}-remove
+    qps: 2
+    burst: 2
+    jobType: delete
+    waitForDeletion: true
+    objects:
+      - kind: Deployment
+        labelSelector:
+          kube-burner-job: du-workload-{{ $i }}
+        apiVersion: apps/v1
+
+  - name: du-workload-{{ $i }}-remove-stateful-sets
+    qps: 2
+    burst: 2
+    jobType: delete
+    waitForDeletion: true
+    objects:
+      - kind: StatefulSet
+        labelSelector:
+          kube-burner-job: du-workload-{{ $i }}
+        apiVersion: apps/v1
+
+  - name: ensure-pods-removal-{{ $i }}
+    qps: 10
+    burst: 10
+    jobType: delete
+    waitForDeletion: true
+    objects:
+      - kind: Pod
+        labelSelector:
+          kube-burner-job: du-workload-{{ $i }}
+
+  - name: remove-configmaps-secrets-{{ $i }}
+    qps: 2
+    burst: 2
+    jobType: delete
+    waitForDeletion: true
+    objects:
+      - kind: ConfigMap
+        labelSelector:
+          kube-burner-job: du-workload-{{ $i }}
+      - kind: Secret
+        labelSelector:
+          kube-burner-job: du-workload-{{ $i }}
+
+  - name: remove-services-{{ $i }}
+    qps: 2
+    burst: 2
+    jobType: delete
+    waitForDeletion: true
+    objects:
+      - kind: Service
+        labelSelector:
+          kube-burner-job: du-workload-{{ $i }}
+      - kind: ServiceAccount
+        labelSelector:
+          kube-burner-job: du-workload-{{ $i }}
+
+  - name: remove-roles-{{ $i }}
+    qps: 2
+    burst: 2
+    jobType: delete
+    namespace: workload
+    waitForDeletion: true
+    objects:
+      - kind: RoleBinding
+        labelSelector:
+          kube-burner-job: du-workload-{{ $i }}
+        apiVersion: rbac.authorization.k8s.io/v1
+      - kind: Role
+        labelSelector:
+          kube-burner-job: du-workload-{{ $i }}
+        apiVersion: rbac.authorization.k8s.io/v1
+
+  - name: remove-volumes-{{ $i }}
+    qps: 2
+    burst: 2
+    jobType: delete
+    waitForDeletion: true
+    objects:
+      - kind: PersistentVolumeClaim
+        labelSelector:
+          kube-burner-job: du-workload-{{ $i }}
+      - kind: PersistentVolume
+        labelSelector:
+          kube-burner-job: du-workload-{{ $i }}
+
+  - name: remove-namespace-{{ $i }}
+    qps: 2
+    burst: 2
+    jobType: delete
+    waitForDeletion: true
+    objects:
+      - kind: Namespace
+        labelSelector:
+          kube-burner-job: du-workload-{{ $i }}
+{{- end }}

@@ -20,41 +20,55 @@ spec:
       containers:
       - name: ptp-consumer
         image: {{ .Image_ptp_consumer | quote }}
+        {{- if eq .Values.ptp_events_consumer_version "v2" }}
+        args:
+          - "--local-api-addr=consumer-events-subscription-service.{{ .Release.Namespace }}.svc.cluster.local.:9043"
+          - "--api-path=/api/ocloudNotifications/v2/"
+          - "--api-addr=127.0.0.1:8089"
+          - "--api-version=2.0"
+          - "--http-event-publishers=ptp-event-publisher-service-$(NODE_NAME).openshift-ptp.svc.cluster.local.:9043"
+        {{- else }}
         args:
           - "--local-api-addr=127.0.0.1:27017"
           - "--api-path=/api/ocloudNotifications/v1/"
           - "--api-addr=127.0.0.1:27017"
+        {{- end }}
         env:
-        - name: NODE_NAME
-          {{- if .short_node_name }}
-          value: {{ .short_node_name | quote }}
-          {{- else }}
-          valueFrom:
-            fieldRef:
-              fieldPath: spec.nodeName
-          {{- end }}
-        - name: NODE_NAME_FULL
-          {{- if .short_node_name }}
-          value: {{ .short_node_name | quote }}
-          {{- else }}
-          valueFrom:
-            fieldRef:
-              fieldPath: spec.nodeName
-          {{- end }}
-        - name: NAME_SPACE
-          valueFrom:
-            fieldRef:
-              apiVersion: v1
-              fieldPath: metadata.namespace
-        - name: CONSUMER_PORT
-          value: "27017"
-        - name: CONSUMER_TYPE
-          value: "PTP"
-        - name: ENABLE_STATUS_CHECK
-          value: "true"
+        {{- if ne .Values.ptp_events_consumer_version "v2" }}
+          - name: CONSUMER_PORT
+            value: "27017"
+        {{- end }}
+          - name: NODE_NAME
+            {{- if .short_node_name }}
+            value: {{ .short_node_name | quote }}
+            {{- else }}
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+            {{- end }}
+          - name: NODE_NAME_FULL
+            {{- if .short_node_name }}
+            value: {{ .short_node_name | quote }}
+            {{- else }}
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+            {{- end }}
+          - name: NAME_SPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+          - name: CONSUMER_PORT
+            value: "27017"
+          - name: CONSUMER_TYPE
+            value: "PTP"
+          - name: ENABLE_STATUS_CHECK
+            value: "true"
         volumeMounts:
           - name: pubsubstore
             mountPath: /store
+      {{- template "parts_extra_containers" (dict "N_extra_containers" (.N_extra_containers | default 0) "Image_ubi" (.Image_ubi | default "") "Replica" $suffix "extra_volumes" .extra_volumes "indent" 8 ) }}
       volumes:
         - name: pubsubstore
           emptyDir: {}

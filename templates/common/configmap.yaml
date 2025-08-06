@@ -1,11 +1,17 @@
+{{ $Replica := "1"}}
+{{ $setv := 0 }}
+{{ if ne (index . "Replica") nil }}
+{{ $setv = 1 }}
+{{ $Replica = .Replica }} {{/* Replica isn't set if replica set to 1  // TODO raise bug in kube-burner */}}
+{{- end }}
+{{ $suffix := $Replica }}
+{{- if .group }}
+{{- $suffix = print .group "-" $Replica }}
+{{- end }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  {{- if .group }}
-  name: configmap-{{ .group }}-{{ .Replica }}
-  {{- else }}
-  name: configmap-{{ .Replica }}
-  {{- end }}
+  name: configmap-{{ $suffix }}
 {{- if .data }}
 data: {{ mustToJson .data }}
 {{- else }}
@@ -14,4 +20,7 @@ data:
     a: 1
     b: 2
     c: 3
+{{- end }}
+{{- if .immutable | default false }}
+immutable: true
 {{- end }}

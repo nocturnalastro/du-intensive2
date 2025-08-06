@@ -1,0 +1,537 @@
+---
+global:
+  functionTemplates:
+    - templates/parts/volumes.tpl
+    - templates/parts/networks.tpl
+    - templates/parts/extra_containers.tpl
+jobs:
+  - name: "cu-du-workload-1"
+    jobIterations: 1
+    qps: 4
+    burst: 4
+    namespacedIterations: false
+    namespace: "workload-1"
+    podWait: false
+    cleanup: true
+    waitWhenFinished: true
+    maxWaitTimeout: 30m
+    errorOnVerify: true
+    defaultMissingKeysWithZero: true
+    objects:
+      # Config maps
+        - objectTemplate: templates/common/configmap.yaml
+          replicas: 10
+          inputVars:
+            group: "1-1"
+        - objectTemplate: templates/common/configmap.yaml
+          replicas: 20
+          inputVars:
+            immutable: true
+            group: immutable-1
+
+      # Secrets
+        - objectTemplate: templates/common/secret.yaml
+          replicas: 30
+          inputVars:
+            group: "1"
+
+      # PVCs
+        - objectTemplate: templates/common/pv.yaml
+          replicas: 2
+          inputVars:
+            storage_class: standard
+            size: 1Gi
+            group: storageio-1
+        - objectTemplate: templates/common/pvc.yaml
+          replicas: 2
+          inputVars:
+            storage_class: standard
+            size: 1Gi
+            group: storageio-1
+        - objectTemplate: templates/common/pv.yaml
+          replicas: 1
+          inputVars:
+            storage_class: standard
+            size: 1Gi
+            group: notused-1
+        - objectTemplate: templates/common/pvc.yaml
+          replicas: 1
+          inputVars:
+            storage_class: standard
+            size: 1Gi
+            group: notused-1
+
+      # StorageIO
+        - objectTemplate: templates/storageio/deployment.yaml
+          replicas: 2
+          inputVars:
+            hugepages_1G: 3Gi
+            group: storageio-1
+            {{- if eq (index $ "REGISTRY") nil }}
+            Image_stressng: 'quay.io/rh_ee_apalanis/fedora-stress-ng'
+            Image_nginx: 'quay.io/micosta/webserver'
+            Image_ubi: 'registry.access.redhat.com/ubi8/ubi'
+            {{- else }}
+            Image_stressng: '{{ .REGISTRY }}/fedora-stress-ng'
+            Image_nginx: '{{ .REGISTRY }}/webserver'
+            Image_ubi: '{{ $.REGISTRY }}/ubi'
+            {{- end }}
+            N_extra_containers: 2
+      # guaranteed
+        - objectTemplate: templates/guaranteed/service.yaml
+          replicas: 1
+          inputVars:
+            group: "guaranteed-1"
+        - objectTemplate: templates/guaranteed/deployment.yaml
+          replicas: 1
+          inputVars:
+            group: "guaranteed-1"
+            {{- if eq (index $ "REGISTRY") nil }}
+            Image_stressng: 'quay.io/rh_ee_apalanis/fedora-stress-ng'
+            Image_nginx: 'quay.io/micosta/webserver'
+            Image_ubi: 'registry.access.redhat.com/ubi8/ubi'
+            {{- else }}
+            Image_stressng: '{{ $.REGISTRY }}/fedora-stress-ng'
+            Image_nginx: '{{ .REGISTRY }}/webserver'
+            Image_ubi: '{{ $.REGISTRY }}/ubi'
+            {{- end }}
+            N_extra_containers: 2
+            volumes:
+              - value: "secret-1-1"
+                type: "secret"
+                path: "/var/secret-1"
+              - value: "configmap-1-1"
+                type: "configmap"
+                path: "/var/cm-1"
+              - value: "configmap-immutable-1-1"
+                type: "configmap"
+                path: "/var/cm-1-1"
+              - value: "configmap-immutable-1-2"
+                type: "configmap"
+                path: "/var/cm-1-2"
+              - name: "empty-1"
+                type: "emptyDir"
+                path: "/var/empty-dir-1-1"
+              - value: "pvc-notused-1-1"
+                type: persistentVolumeClaim
+                path: "/var/pvc-1-2"
+
+      # Stress pods
+        - objectTemplate: templates/stress/deployment.yaml
+          replicas: 10
+          inputVars:
+            {{- if eq (index $ "REGISTRY") nil }}
+            Image_stressng: 'quay.io/rh_ee_apalanis/fedora-stress-ng'
+            Image_ubi: 'registry.access.redhat.com/ubi8/ubi'
+            {{- else }}
+            Image_stressng: '{{ $.REGISTRY }}/fedora-stress-ng'
+            Image_ubi: '{{ $.REGISTRY }}/ubi'
+            {{- end }}
+            group: '1'
+            N_extra_containers: 3
+            volumes:
+              - value: "secret-1-1"
+                type: "secret"
+                path: "/var/secret-1"
+              - value: "configmap-1-1"
+                type: "configmap"
+                path: "/var/cm-1"
+              - value: "configmap-immutable-1-1"
+                type: "configmap"
+                path: "/var/cm-i-1"
+              - value: "configmap-immutable-1-2"
+                type: "configmap"
+                path: "/var/cm-i-2"
+              - name: "empty-1"
+                type: "emptyDir"
+                path: "/var/empty-dir-1-1"
+              - value: "pvc-notused-1-1"
+                type: persistentVolumeClaim
+                path: "/var/pvc-1-1"
+
+      # Kubectlapp
+        - objectTemplate: templates/kubectlapp/serviceaccount.yaml
+          replicas: 20
+          inputVars:
+            group: '1'
+        - objectTemplate: templates/kubectlapp/role.yaml
+          replicas: 20
+          inputVars:
+            group: '1'
+        - objectTemplate: templates/kubectlapp/rolebinding.yaml
+          replicas: 20
+          inputVars:
+            group: '1'
+        - objectTemplate: templates/kubectlapp/deployment.yaml
+          replicas: 20
+          inputVars:
+            group: '1'
+            {{- if eq (index $ "REGISTRY") nil }}
+            Image_nginx: 'quay.io/micosta/webserver'
+            Image_kubectl: 'quay.io/rh_ee_apalanis/kubectl'
+            Image_ubi: 'registry.access.redhat.com/ubi8/ubi'
+            {{- else }}
+            Image_nginx: '{{ .REGISTRY }}/webserver'
+            Image_kubectl: '{{ .REGISTRY }}/kubectl'
+            Image_ubi: '{{ $.REGISTRY }}/ubi'
+            {{- end }}
+            volumes:
+              - value: "secret-1-2"
+                type: "secret"
+                path: "/var/secret-2"
+              - value: "configmap-1-2"
+                type: "configmap"
+                path: "/var/cm-2"
+              - value: "configmap-immutable-1-3"
+                type: "configmap"
+                path: "/var/cm-i-3"
+              - value: "configmap-immutable-1-4"
+                type: "configmap"
+                path: "/var/cm-i-4"
+              - name: "empty-1"
+                type: "emptyDir"
+                path: "/var/empty-dir-1-1"
+            N_extra_containers: 2
+
+      # Web server & Curl
+        - objectTemplate: templates/webserver/webserver-deployment.yaml
+          replicas: 10
+          inputVars:
+            nBytes: 700000000
+            {{- if eq (index $ "REGISTRY") nil }}
+            Image_stressng: 'quay.io/rh_ee_apalanis/fedora-stress-ng'
+            Image_nginx: 'quay.io/micosta/webserver'
+            Image_ubi: 'registry.access.redhat.com/ubi8/ubi'
+            {{- else }}
+            Image_stressng: '{{ $.REGISTRY }}/fedora-stress-ng'
+            Image_nginx: '{{ $.REGISTRY }}/webserver'
+            Image_ubi: '{{ $.REGISTRY }}/ubi'
+            {{- end }}
+            group: '1'
+            volumes:
+              - value: "secret-1-3"
+                type: "secret"
+                path: "/var/secret-3"
+              - value: "configmap-1-3}"
+                type: "configmap"
+                path: "/var/cm-3"
+              - value: "configmap-immutable-1-5"
+                type: "configmap"
+                path: "/var/cm-i-5"
+              - value: "configmap-immutable-1-6"
+                type: "configmap"
+                path: "/var/cm-i-6"
+              - name: "empty-1"
+                type: "emptyDir"
+                path: "/var/empty-dir-1-1"
+            N_extra_containers: 2
+        - objectTemplate: templates/webserver/webserver-service.yaml
+          replicas: 10
+          inputVars:
+            group: '1'
+        - objectTemplate: templates/webserver/curl-deployment.yaml
+          replicas: 10
+          inputVars:
+            webserver_path: data
+            group: '1'
+            no_exec: true
+            {{- if eq (index $ "REGISTRY") nil }}
+            Image_nginx: 'quay.io/micosta/webserver'
+            Image_curl: 'quay.io/micosta/curl'
+            Image_ubi: 'registry.access.redhat.com/ubi8/ubi'
+            {{- else }}
+            Image_nginx: '{{ $.REGISTRY }}/webserver'
+            Image_curl: '{{ $.REGISTRY }}/curl'
+            Image_ubi: '{{ $.REGISTRY }}/ubi'
+            {{- end }}
+            volumes:
+              - value: "secret-1-4"
+                type: "secret"
+                path: "/var/secret-4"
+              - value: "configmap-1-4"
+                type: "configmap"
+                path: "/var/cm-4"
+              - value: "configmap-immutable-1-7"
+                type: "configmap"
+                path: "/var/cm-i-7"
+              - value: "configmap-immutable-1-8"
+                type: "configmap"
+                path: "/var/cm-i-8"
+              - name: "empty-1"
+                type: "emptyDir"
+                path: "/var/empty-dir-1-1"
+            N_extra_containers: 2
+
+      # IPerf
+        {{- if not (index . "SKIP_IPERF_MACHINE_CONFIG") }}
+        - objectTemplate: templates/iperf/machine-config.yaml
+          replicas: 1
+        {{- end }}
+        - objectTemplate: templates/iperf/serviceaccount.yaml
+          replicas: 1
+        - objectTemplate: templates/iperf/security-context-constraints.yaml
+          replicas: 1
+          inputVars:
+            sa_namespace: workload-1
+
+        - objectTemplate: templates/iperf/deployment-server.yaml
+          replicas: 1
+          inputVars:
+            group: 'net-1-in'
+            serverIP: {{ .IPERF_SERVER_IP | quote }}
+            subnet: {{ .IPERF_SUBNET | quote }}
+            {{- if eq (index $ "REGISTRY") nil }}
+            Image_iperf: 'quay.io/micosta/iperf3'
+            Image_ubi: 'registry.access.redhat.com/ubi8/ubi'
+            {{- else }}
+            Image_iperf: ''{{ $.REGISTRY }}/iperf3'
+            Image_ubi: '{{ $.REGISTRY }}/ubi'
+            {{- end }}
+            networks: {{ .IPERF_SERVER_NETWORK_DEFS }}
+            N_extra_containers: 3
+
+        - objectTemplate: templates/iperf/deployment-client.yaml
+          replicas: 1
+          inputVars:
+            group: 'net-1-out'
+            serverIP: {{ .IPERF_SERVER_IP | quote }}
+            subnet: {{ .IPERF_SUBNET | quote }}
+            {{- if eq (index $ "REGISTRY") nil }}
+            Image_iperf: 'quay.io/micosta/iperf3'
+            Image_ubi: 'registry.access.redhat.com/ubi8/ubi'
+            {{- else }}
+            Image_iperf: ''{{ $.REGISTRY }}/iperf3'
+            Image_ubi: '{{ $.REGISTRY }}/ubi'
+            {{- end }}
+            networks: {{ .IPERF_CLIENT_NETWORK_DEFS }}
+            N_extra_containers: 3
+
+{{- range $j := until 4 }}
+  {{- $i := add $j 2 }}
+  - name: "cu-du-workload-{{ $i }}"
+    jobIterations: 1
+    qps: 4
+    burst: 4
+    namespacedIterations: false
+    namespace: "workload-{{ $i }}"
+    podWait: false
+    cleanup: true
+    waitWhenFinished: true
+    maxWaitTimeout: 5m
+    errorOnVerify: true
+    defaultMissingKeysWithZero: true
+    objects:
+    # Config maps
+      - objectTemplate: templates/common/configmap.yaml
+        replicas: 10
+        inputVars:
+          group: {{ $i | quote }}
+      - objectTemplate: templates/common/configmap.yaml
+        replicas: 20
+        inputVars:
+          immutable: true
+          group: "immutable-{{ $i }}"
+
+    # Secrets
+      - objectTemplate: templates/common/secret.yaml
+        replicas: 30
+        inputVars:
+          group: "{{ $i }}"
+
+    # PVCs
+      - objectTemplate: templates/common/pv.yaml
+        replicas: 2
+        inputVars:
+          storage_class: standard
+          size: 1Gi
+          group: "storageio-{{ $i }}"
+      - objectTemplate: templates/common/pvc.yaml
+        replicas: 2
+        inputVars:
+          storage_class: standard
+          size: 1Gi
+          group: "storageio-{{ $i }}"
+
+      - objectTemplate: templates/guaranteed/deployment.yaml
+        replicas: 1
+        inputVars:
+          group: "guaranteed-{{ $i }}"
+          cpu_limit: 1m
+          mem_limit:  512M
+          cpu_stress: 1
+          vm_stress: 1
+          vm_bytes_stress: 10M
+          hugepages_1G: "2Gi"
+          {{- if eq (index $ "REGISTRY") nil }}
+          Image_stressng: 'quay.io/rh_ee_apalanis/fedora-stress-ng'
+          Image_nginx: 'quay.io/micosta/webserver'
+          Image_ubi: 'registry.access.redhat.com/ubi8/ubi'
+          {{- else }}
+          Image_stressng: '{{ $.REGISTRY }}/fedora-stress-ng'
+          Image_nginx: '{{ .REGISTRY }}/webserver'
+          Image_ubi: '{{ $.REGISTRY }}/ubi'
+          {{- end }}
+          N_extra_containers: 2
+          volumes:
+            - value: "secret-{{ $i }}-1"
+              type: "secret"
+              path: "/var/secret-1"
+            - value: "configmap-{{ $i }}-1"
+              type: "configmap"
+              path: "/var/cm-1"
+            - value: "configmap-immutable-{{ $i }}-1"
+              type: "configmap"
+              path: "/var/cm-i-1"
+            - value: "configmap-immutable-{{ $i }}-2"
+              type: "configmap"
+              path: "/var/cm-i-2"
+
+    # Stress pods
+      - objectTemplate: templates/stress/deployment.yaml
+        replicas: 1
+        inputVars:
+          {{- if eq (index $ "REGISTRY") nil }}
+          Image_stressng: 'quay.io/rh_ee_apalanis/fedora-stress-ng'
+          Image_ubi: 'registry.access.redhat.com/ubi8/ubi'
+          {{- else }}
+          Image_stressng: '{{ $.REGISTRY }}/fedora-stress-ng'
+          Image_ubi: '{{ $.REGISTRY }}/ubi'
+          {{- end }}
+          group: '{{ printf "%03d" $i}}'
+          N_extra_containers: 3
+          volumes:
+            - value: "secret-{{ $i }}-1"
+              type: "secret"
+              path: "/var/secret-1"
+            - value: "configmap-{{ $i }}-1"
+              type: "configmap"
+              path: "/var/cm-1"
+            - value: "configmap-immutable-{{ $i }}-1"
+              type: "configmap"
+              path: "/var/cm-i-1"
+            - value: "configmap-immutable-{{ $i }}-2"
+              type: "configmap"
+              path: "/var/cm-i-2"
+
+    # Kubectlapp
+      - objectTemplate: templates/kubectlapp/serviceaccount.yaml
+        replicas: 1
+        inputVars:
+          group: '{{ printf "%03d" $i}}'
+      - objectTemplate: templates/kubectlapp/role.yaml
+        replicas: 1
+        inputVars:
+          group: '{{ printf "%03d" $i}}'
+      - objectTemplate: templates/kubectlapp/rolebinding.yaml
+        replicas: 20
+        inputVars:
+          group: '1'
+      - objectTemplate: templates/kubectlapp/deployment.yaml
+        replicas: 1
+        inputVars:
+          group: '{{ printf "%03d" $i}}'
+          {{- if eq (index $ "REGISTRY") nil }}
+          Image_nginx: 'quay.io/micosta/webserver'
+          Image_kubectl: 'quay.io/rh_ee_apalanis/kubectl'
+          Image_ubi: 'registry.access.redhat.com/ubi8/ubi'
+          {{- else }}
+          Image_nginx: '{{ .REGISTRY }}/webserver'
+          Image_kubectl: '{{ .REGISTRY }}/kubectl'
+          Image_ubi: '{{ $.REGISTRY }}/ubi'
+          {{- end }}
+          volumes:
+            - value: configmap-{{ $i }}-1
+              type: configMap
+              path: /var/configmap1
+            - value: configmap-{{ $i }}-2
+              type: configMap
+              path: /var/configmap2
+            - value: secret-{{ $i }}-1
+              type: secret
+              path: /var/secret1
+            - value: secret-{{ $i }}-2
+              type: secret
+              path: /var/secret2
+            - value: secret-{{ $i }}-3
+              type: secret
+              path: /var/secret3
+            - value: secret-{{ $i }}-4
+              type: secret
+              path: /var/secret4
+          N_extra_containers: 2
+
+      - objectTemplate: templates/webserver/webserver-deployment.yaml
+        replicas: 1
+        inputVars:
+          nBytes: 700000000
+          {{- if eq (index $ "REGISTRY") nil }}
+          Image_stressng: 'quay.io/rh_ee_apalanis/fedora-stress-ng'
+          Image_nginx: 'quay.io/micosta/webserver'
+          Image_ubi: 'registry.access.redhat.com/ubi8/ubi'
+          {{- else }}
+          Image_stressng: '{{ $.REGISTRY }}/fedora-stress-ng'
+          Image_nginx: '{{ $.REGISTRY }}/webserver'
+          Image_ubi: '{{ $.REGISTRY }}/ubi'
+          {{- end }}
+          group: '{{ printf "%03d" $i}}'
+          N_extra_containers: 2
+          volumes:
+            - value: configmap-{{ $i }}-1
+              type: configMap
+              path: /var/configmap1
+            - value: configmap-{{ $i }}-2
+              type: configMap
+              path: /var/configmap2
+            - value: secret-{{ $i }}-1
+              type: secret
+              path: /var/secret1
+            - value: secret-{{ $i }}-2
+              type: secret
+              path: /var/secret2
+            - value: secret-{{ $i }}-3
+              type: secret
+              path: /var/secret3
+            - value: secret-{{ $i }}-4
+              type: secret
+              path: /var/secret4
+      - objectTemplate: templates/webserver/webserver-service.yaml
+        replicas: 1
+        inputVars:
+          group: '{{ printf "%03d" $i}}'
+      - objectTemplate: templates/webserver/curl-deployment.yaml
+        replicas: 1
+        inputVars:
+          webserver_path: "data"
+          webserver_suffix: workload-{{ printf "%03d" $i}}.svc.cluster.local
+          group: '{{ printf "%03d" $i}}'
+          no_exec: true
+          {{- if eq (index $ "REGISTRY") nil }}
+          Image_nginx: 'quay.io/micosta/webserver'
+          Image_curl: 'quay.io/micosta/curl'
+          Image_ubi: 'registry.access.redhat.com/ubi8/ubi'
+          {{- else }}
+          Image_nginx: '{{ $.REGISTRY }}/webserver'
+          Image_curl: '{{ $.REGISTRY }}/curl'
+          Image_ubi: '{{ $.REGISTRY }}/ubi'
+          {{- end }}
+          N_extra_containers: 2
+          volumes:
+            - value: configmap-{{ $i }}-1
+              type: configMap
+              path: /var/configmap1
+            - value: configmap-{{ $i }}-2
+              type: configMap
+              path: /var/configmap2
+            - value: secret-{{ $i }}-1
+              type: secret
+              path: /var/secret1
+            - value: secret-{{ $i }}-2
+              type: secret
+              path: /var/secret2
+            - value: secret-{{ $i }}-3
+              type: secret
+              path: /var/secret3
+            - value: secret-{{ $i }}-4
+              type: secret
+              path: /var/secret4
+{{- end }}

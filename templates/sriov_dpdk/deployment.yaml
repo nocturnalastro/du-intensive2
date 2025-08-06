@@ -1,22 +1,26 @@
-{{- $networks := list}}
-{{- range $net := .networks }}
-{{- $networks = append $networks $net.network }}
+{{ $Replica := "1"}}
+{{ if ne (index . "Replica") nil }}
+{{ $Replica = .Replica }} {{/* Replica isn't set if replica set to 1  // TODO raise bug in kube-burner */}}
+{{- end }}
+{{ $suffix := $Replica }}
+{{- if .group }}
+{{- $suffix = print .group "-" $Replica }}
 {{- end }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: dpdk-deployment-{{ .Replica }}
+  name: dpdk-deployment-{{ $suffix }}
   labels:
-    app: dpdk-deployment-{{ .Replica }}
+    app: dpdk-deployment-{{ $suffix }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: dpdk-deployment-{{ .Replica }}
+      app: dpdk-deployment-{{ $suffix }}
   template:
     metadata:
       labels:
-        app: dpdk-deployment-{{ .Replica }}
+        app: dpdk-deployment-{{ $suffix }}
       annotations:
         {{- if .scc_privileged }}
         openshift.io/required-scc: privileged
@@ -24,7 +28,7 @@ spec:
         cpu-load-balancing.crio.io: disable
         cpu-quota.crio.io: disable
         irq-load-balancing.crio.io: disable
-        k8s.v1.cni.cncf.io/networks: {{ $networks | toJson | quote }}
+        {{- template "parts_network_defs" (dict "networks" .networks "indent" 8) }}
     spec:
       shareProcessNamespace: true
       serviceAccountName: sriovdpdksa
@@ -60,9 +64,7 @@ spec:
               {{- if (.ephemeral_storage_request | default .ephemeral_storage_limit) }}
               ephemeral-storage: {{ (.ephemeral_storage_request | default .ephemeral_storage_limit) | quote }}
               {{- end }}
-              {{- range $net := .networks }}
-              {{ print ($net.resource | quote) ": '1'" }}
-              {{- end }}
+              {{- template "parts_network_resources" (dict "networks" .networks "indent" 14 ) }}
               {{- if .accelerator_model }}
               {{ print (.accelerator_model | quote) ": '1'" }}
               {{- end }}
@@ -73,9 +75,7 @@ spec:
               {{- if .ephemeral_storage_limit }}
               ephemeral-storage: {{ .ephemeral_storage_limit | quote }}
               {{- end }}
-              {{- range $net :=.networks }}
-              {{ print ($net.resource | quote) ": '1'" }}
-              {{- end }}
+              {{- template "parts_network_resources" (dict "networks" .networks "indent" 14 ) }}
               {{- if .accelerator_model }}
               {{ print (.accelerator_model | quote) ": '1'" }}
               {{- end }}
@@ -94,10 +94,7 @@ spec:
           volumeMounts:
             - mountPath: /dev/hugepages
               name: hugepage
-            {{- range $volume := .volumes }}
-            - name: {{ $volume.name | default $volume.value }}
-              mountPath: {{ $volume.path }}
-            {{- end }}
+            {{- template "parts_volume_mounts" (dict "volumes" .volumes "indent" 12) }}
           env:
             - name: TZ
               value: UTC
@@ -121,28 +118,11 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: spec.nodeName
+        {{- template "parts_extra_containers" (dict "N_extra_containers" (.N_extra_containers | default 0) "Image_ubi" (.Image_ubi | default "") "Replica" $suffix "extra_volumes" .extra_volumes "indent" 8 ) }}
       volumes:
         - emptyDir: {}
           name: shared-sockets
         - emptyDir:
             medium: HugePages
           name: hugepage
-        {{- range $volume := .volumes }}
-        - name: {{ $volume.name | default $volume.value }}
-          {{- if eq $volume.type "configMap" }}
-          configMap:
-            name: {{ $volume.value }}
-          {{- else if eq $volume.type "secret" }}
-          secret:
-            secretName: {{ $volume.value }}
-          {{- else if eq $volume.type "persistentVolumeClaim" }}
-          persistentVolumeClaim:
-            claimName: {{ $volume.value }}
-          {{- else if eq $volume.type "emptyDir" }}
-          emptyDir: {{ $volume.emptyDirConfig | default dict | toJson }}
-          {{- else if eq $volume.type "hostpath" }}
-          hostPath:
-            path: {{ $volume.path }}
-            type: ""
-          {{- end }}
-        {{- end }}
+        {{- template "parts_volume_defs" (dict "volumes" .volumes "indent" 8) }}
