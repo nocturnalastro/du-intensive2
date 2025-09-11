@@ -3,7 +3,7 @@ kind: MachineConfig
 metadata:
   labels:
     {{- $role := "master" }}
-    {{- if index . role }}
+    {{- if index .role }}
     {{- $role = .role }}
     {{- end }}
     machineconfiguration.openshift.io/role: {{ $role | quote }}
