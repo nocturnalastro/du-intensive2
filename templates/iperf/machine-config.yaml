@@ -2,11 +2,11 @@ apiVersion: machineconfiguration.openshift.io/v1
 kind: MachineConfig
 metadata:
   labels:
-    {{- $role := "master" }}
-    {{- if index . role }}
-    {{- $role = .role }}
-    {{- end }}
-    machineconfiguration.openshift.io/role: {{ $role | quote }}
+    # {{- $role := "master" }}
+    # {{- if index . "role" }}
+    # {{- $role = .role }}
+    # {{- end }}
+    machineconfiguration.openshift.io/role: master # {{ $role | quote }}
   # The "99-" prefix ensures it's applied after default configurations.
   name: 99-master-load-nftables-modules
 spec:
